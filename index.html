@@ -13,6 +13,8 @@
             font-family: 'Lato', sans-serif;
             background-color: #FDF8F2; /* Creamy background */
             color: #4B3F3F; /* Dark brown text */
+            /* Prevent annoying bounce/refresh on mobile */
+            overscroll-behavior: none;
         }
         h1, h2, h3, h4, h5 {
             font-family: 'Playfair Display', serif;
@@ -141,6 +143,7 @@
             height: 300px;
             perspective: 1000px;
             cursor: pointer;
+            user-select: none; /* Prevent text selection during swipe */
         }
         #flashcard-inner {
             position: relative;
@@ -818,7 +821,7 @@
             { left: "Perth Hills", right: "N/A", type: "GI-Feature" },
             { left: "Perth Hills", right: "N/A", type: "GI-Producer" },
             { left: "Swan District", right: "N/A", type: "GI-Feature" },
-            { left: "Swan District", right: "N/A", type: "GI-Producer" },
+            { left: "Swan District", right: "N/A", "type": "GI-Producer" },
         ];
 
         // --- GLOBAL VARIABLES ---
@@ -846,6 +849,10 @@
         let currentFilteredDeck = [];
         let currentCardIndex = 0;
         let isCardFlipped = false;
+        // NEW: Touch/Swipe State
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const minSwipeDistance = 50; // Min pixels for a swipe
         
         // Data Arrays & Maps
         let stateZonePairs = [];
@@ -1366,11 +1373,19 @@
             const uniquePairs = new Map();
             const cleanId = (str) => str.replace(/[\s\(\)\/'.&-]/g, ''); // Helper to clean IDs
 
-            // State-Zone Deck: "What State is [ZONE] in?" -> [STATE]
+            // --- State-Zone Deck (NEW LOGIC) ---
             uniquePairs.set('State-Zone', new Map());
-            stateZonePairs.forEach(p => {
+            const regularStateZonePairs = stateZonePairs.filter(p => p.right !== 'N/A');
+            const noZoneStates = stateZonePairs
+                .filter(p => p.right === 'N/A')
+                .map(p => p.left)
+                .sort() // Sorts them alphabetically
+                .join(' / '); // Creates "Queensland / Tasmania"
+
+            regularStateZonePairs.forEach(p => {
                 uniquePairs.get('State-Zone').set(p.right, p.left); // key=Zone, value=State
             });
+            
             uniquePairs.get('State-Zone').forEach((state, zone) => {
                 flashcardDecks['State-Zone'].push({
                     prompt: `What State is this Zone in?`,
@@ -1381,23 +1396,38 @@
                 });
             });
 
-            // Zone-GI Deck: "What Zone is [GI] in?" -> [ZONE]
+            // Add the special "No Zone" card
+            if (noZoneStates) {
+                flashcardDecks['State-Zone'].push({
+                    prompt: `A special rule of Australian Wine Law:`,
+                    front: `Which States have zero zones in them?`,
+                    back: noZoneStates,
+                    id: `sz-special-nozones`,
+                    learned: false
+                });
+            }
+
+            // --- Zone-GI Deck (NEW LOGIC) ---
             uniquePairs.set('Zone-GI', new Map());
             zoneGIPairs.forEach(p => {
                 let zone = p.left.includes("-N/A") ? "N/A" : p.left;
-                uniquePairs.get('Zone-GI').set(p.right, zone); // key=GI, value=Zone
+                if (!uniquePairs.get('Zone-GI').has(p.right)) {
+                    uniquePairs.get('Zone-GI').set(p.right, new Set()); // Use a Set to store multiple zones
+                }
+                uniquePairs.get('Zone-GI').get(p.right).add(zone); // Add zone to the Set
             });
-            uniquePairs.get('Zone-GI').forEach((zone, gi) => {
+            
+            uniquePairs.get('Zone-GI').forEach((zones, gi) => {
                 flashcardDecks['Zone-GI'].push({
-                    prompt: `What Zone is this GI in?`,
+                    prompt: `What Zone(s) is this GI in?`, // Updated prompt
                     front: gi,
-                    back: zone,
+                    back: Array.from(zones).sort().join(' / '), // Join all zones from the Set
                     id: `zg-${cleanId(gi)}`,
                     learned: false
                 });
             });
 
-            // GI-Natural-Feature Deck: "What GI has this natural feature?" -> [GI]
+            // --- GI-Natural-Feature Deck (Corrected Logic) ---
             uniquePairs.set('GI-Natural-Feature', new Map());
             giFeaturePairs.forEach(p => {
                 if (!uniquePairs.get('GI-Natural-Feature').has(p.right)) {
@@ -1405,17 +1435,18 @@
                 }
                 uniquePairs.get('GI-Natural-Feature').get(p.right).add(p.left); // key=Feature, value=Set(GIs)
             });
+            
             uniquePairs.get('GI-Natural-Feature').forEach((gis, feature) => {
                 flashcardDecks['GI-Natural-Feature'].push({
-                    prompt: `What GI has this natural feature?`,
+                    prompt: `What GI(s) has this natural feature?`,
                     front: feature,
-                    back: Array.from(gis).join(' / '),
+                    back: Array.from(gis).sort().join(' / '),
                     id: `gf-${cleanId(feature)}`,
                     learned: false
                 });
             });
 
-            // GI-Producer Deck: "What GI is [PRODUCER] in?" -> [GI]
+            // --- GI-Producer Deck (Corrected Logic) ---
             uniquePairs.set('GI-Producer', new Map());
             giProducerPairs.forEach(p => {
                  if (!uniquePairs.get('GI-Producer').has(p.right)) {
@@ -1423,11 +1454,12 @@
                 }
                 uniquePairs.get('GI-Producer').get(p.right).add(p.left); // key=Producer, value=Set(GIs)
             });
+            
             uniquePairs.get('GI-Producer').forEach((gis, producer) => {
                 flashcardDecks['GI-Producer'].push({
-                    prompt: `What GI is this producer in?`,
+                    prompt: `What GI(s) is this producer in?`,
                     front: producer,
-                    back: Array.from(gis).join(' / '),
+                    back: Array.from(gis).sort().join(' / '),
                     id: `gp-${cleanId(producer)}`,
                     learned: false
                 });
@@ -1580,13 +1612,61 @@
             startModal.classList.remove('hidden');
         }
 
+        // --- NEW: KEYBOARD & TOUCH CONTROLS ---
+        function handleKeyControls(e) {
+            // Only run if the flashcard container is active
+            if (flashcardContainer.classList.contains('hidden')) return;
+
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevCard();
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                nextCard();
+            } else if (e.key === ' ' || e.code === 'Space') {
+                e.preventDefault();
+                flipCard();
+            }
+        }
+
+        function handleTouchStart(e) {
+            // Get the first touch point
+            touchStartX = e.touches[0].clientX;
+            touchEndX = touchStartX; // Reset endX at the start
+        }
+
+        function handleTouchMove(e) {
+            // Update the end position as the finger moves
+            touchEndX = e.touches[0].clientX;
+        }
+
+        function handleTouchEnd(e) {
+            if (currentFilteredDeck.length === 0) return;
+
+            const swipeDistance = touchEndX - touchStartX;
+
+            if (Math.abs(swipeDistance) < minSwipeDistance) {
+                // It's a TAP, not a swipe
+                flipCard();
+            } else if (swipeDistance < -minSwipeDistance) {
+                // Swiped LEFT (Next Card)
+                nextCard();
+            } else if (swipeDistance > minSwipeDistance) {
+                // Swiped RIGHT (Previous Card)
+                prevCard();
+            }
+            
+            // Reset coordinates
+            touchStartX = 0;
+            touchEndX = 0;
+        }
+
         // --- GLOBAL INITIALIZATION ---
         
         function initializeData() {
             // 1. Populate filtered arrays for the matching game
             stateZonePairs = gameData.filter(q => q.type === 'State-Zone');
             zoneGIPairs = gameData.filter(q => q.type === 'Zone-GI');
-            // --- FIX IS HERE ---
             giFeaturePairs = gameData.filter(q => q.type === 'GI-Feature' && q.right !== 'N/A' && q.right !== 'none');
             giProducerPairs = gameData.filter(q => q.type === 'GI-Producer' && q.right !== 'N/A');
             
@@ -1615,7 +1695,7 @@
                 });
             });
 
-            // 3. Build the flashcard decks
+            // 3. Build the flashcard decks with new logic
             buildFlashcardDecks();
         }
         
@@ -1670,13 +1750,20 @@
             });
         });
 
-        flashcard.addEventListener('click', flipCard);
+        // --- NEW: Remove old click listener, add new controls ---
+        // flashcard.addEventListener('click', flipCard); // <-- REMOVED
         prevCardBtn.addEventListener('click', prevCard);
         nextCardBtn.addEventListener('click', nextCard);
         toggleLearnedBtn.addEventListener('click', toggleLearned);
         resetDeckBtn.addEventListener('click', resetDeck);
         studyModeRadios.forEach(radio => radio.addEventListener('change', buildFilteredDeck));
         flashcardMainMenuBtn.addEventListener('click', showMainMenu);
+
+        // Add new listeners
+        document.addEventListener('keydown', handleKeyControls);
+        flashcard.addEventListener('touchstart', handleTouchStart, false);
+        flashcard.addEventListener('touchmove', handleTouchMove, false);
+        flashcard.addEventListener('touchend', handleTouchEnd, false);
 
     </script>
 </body>
