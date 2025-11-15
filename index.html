@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Australian Wine Law Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: #FDF8F2; /* Creamy background */
+            color: #4B3F3F; /* Dark brown text */
+        }
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+        }
+        .game-card {
+            background-color: #FFFFFF;
+            border: 1px solid #DED1C1;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .btn-choice {
+            transition: all 0.2s ease-in-out;
+            border: 2px solid #DED1C1;
+            background-color: #fff;
+        }
+        .btn-choice:hover:not(:disabled) {
+            background-color: #FDF8F2;
+            transform: translateY(-2px);
+        }
+        .btn-choice:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .btn-choice.correct {
+            background-color: #D1FAE5; /* Green for correct */
+            border-color: #6EE7B7;
+            color: #065F46;
+            cursor: not-allowed;
+        }
+        .btn-choice.incorrect {
+            animation: shake 0.5s;
+            background-color: #FEE2E2; /* Red for incorrect */
+            border-color: #FCA5A5;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="start-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center transform transition-all">
+            <h2 class="text-4xl font-bold mb-4 text-red-900">Welcome!</h2>
+            <p class="text-lg mb-6 text-left text-gray-700">Test your knowledge of Australian Wine Laws.</p>
+            <div class="text-left space-y-3 mb-8 bg-red-800/5 p-4 rounded-lg border border-red-800/10">
+                <p><strong class="text-red-800">GOAL:</strong> Correctly match the geographical items across 20 rounds.</p>
+                <ul class="list-disc list-inside pl-4 text-gray-600">
+                    <li>Rounds 1-5: Match the <strong>State</strong> to its <strong>Zone</strong>.</li>
+                    <li>Rounds 6-10: Match the <strong>Zone</strong> to its <strong>GI</strong>.</li>
+                    <li>Rounds 11-15: Match the <strong>GI</strong> to its <strong>Natural Feature</strong>.</li>
+                    <li>Rounds 16-20: Match the <strong>GI</strong> to its <strong>Key Producer</strong>.</li>
+                </ul>
+                <p><strong class="text-red-800">SCORING:</strong></p>
+                <ul class="list-disc list-inside pl-4 text-gray-600">
+                    <li><span class="font-bold text-green-700">+2 points</span> for a correct match on the first try.</li>
+                    <li><span class="font-bold text-green-700">+1 point</span> for a correct match on subsequent tries.</li>
+                    <li><span class="font-bold text-red-700">-1 point</span> for an incorrect match (min. score is 0).</li>
+                </ul>
+            </div>
+            <button id="start-game-btn" class="w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-xl">Start Game</button>
+        </div>
+    </div>
+
+    <div id="game-container" class="w-full max-w-2xl mx-auto hidden">
+        <div class="text-center mb-6">
+            <h1 class="text-4xl md:text-5xl font-bold text-red-900">Australia Wine Master</h1>
+            <p class="text-lg text-gray-600 mt-2">Geographical Indication Challenge</p>
+        </div>
+
+        <div class="flex justify-between items-center mb-6 p-4 rounded-lg bg-red-800/10 text-red-900 game-card">
+            <div class="text-center">
+                <h3 class="text-xl font-bold">Round</h3>
+                <p id="round-info" class="text-2xl font-semibold">1 / 20</p>
+            </div>
+            <div class="text-center">
+                <h3 class="text-xl font-bold">Score</h3>
+                <p id="score-info" class="text-2xl font-semibold">0</p>
+            </div>
+        </div>
+
+        <div class="game-card rounded-lg p-6 md:p-8">
+            <div class="text-center mb-6">
+                <p id="match-prompt" class="text-lg mb-2">Match the State:</p>
+                <h2 id="item-to-match" class="text-3xl md:text-4xl font-bold">Item Name</h2>
+            </div>
+
+            <div>
+                <h3 id="choices-title" class="text-2xl font-bold text-center mb-4">Choices</h3>
+                <div id="choices-container" class="flex flex-col space-y-3">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="success-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center transform transition-all scale-95 opacity-0">
+            <div id="modal-message" class="text-4xl font-bold mb-4 text-green-700">Great Job!</div>
+            <button id="next-round-btn" class="w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors">Next Round</button>
+        </div>
+    </div>
+    
+    <div id="game-over-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center transform transition-all scale-95 opacity-0">
+            <h2 class="text-4xl font-bold mb-4 text-red-900">Game Over!</h2>
+            <p id="final-score-message" class="text-3xl font-bold mb-4 text-red-800"></p>
+            <div class="bg-red-800/10 p-4 rounded-lg mb-6">
+                <p class="text-lg text-left clear-both">Final Score: <span id="final-score" class="font-bold float-right">0</span></p>
+                <p class="text-lg text-left mt-1 clear-both">Percentage: <span id="final-percentage" class="font-bold float-right">0%</span></p>
+            </div>
+            <button id="play-again-btn" class="w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA ---
+        // This database is generated directly from the provided 'Australia Wine Law Compendium'
+        const gameData = [
+            // --- New South Wales ---
+            { left: "New South Wales", right: "Northern Slopes", type: "State-Zone" },
+            { left: "New South Wales", right: "Northern Rivers", type: "State-Zone" },
+            { left: "New South Wales", right: "Hunter Valley", type: "State-Zone" },
+            { left: "New South Wales", right: "Central Ranges", type: "State-Zone" },
+            { left: "New South Wales", right: "Southern New South Wales", type: "State-Zone" },
+            { left: "New South Wales", right: "South Coast", type: "State-Zone" },
+            { left: "New South Wales", right: "Western Plains", type: "State-Zone" },
+            { left: "New South Wales", right: "Big Rivers", type: "State-Zone" },
+            { left: "Northern Slopes", right: "New England Australia", type: "Zone-GI" },
+            { left: "New England Australia", right: "Great Dividing Range", type: "GI-Feature" },
+            { left: "New England Australia", right: "Black Mountain", type: "GI-Feature" },
+            { left: "New England Australia", right: "Peel River", type: "GI-Feature" },
+            { left: "New England Australia", right: "Gwydir River", type: "GI-Feature" },
+            { left: "New England Australia", right: "Severn River", type: "GI-Feature" },
+            { left: "New England Australia", right: "Moonbi Hills", type: "GI-Feature" },
+            { left: "New England Australia", right: "New England Estate", type: "GI-Producer" },
+            { left: "New England Australia", right: "Blickling Estate", type: "GI-Producer" },
+            { left: "New England Australia", right: "Jilly Wines", type: "GI-Producer" },
+            { left: "Northern Rivers", right: "Hastings River", type: "Zone-GI" },
+            { left: "Hastings River", right: "Broken Bago Range", type: "GI-Feature" },
+            { left: "Hastings River", right: "Pacific Ocean", type: "GI-Feature" },
+            { left: "Hastings River", right: "Hastings River", type: "GI-Feature" },
+            { left: "Hastings River", right: "Bago Vineyards", type: "GI-Producer" },
+            { left: "Hastings River", right: "Cassegrain", type: "GI-Producer" },
+            { left: "Hunter Valley", right: "Hunter", type: "Zone-GI" },
+            { left: "Hunter", right: "Hunter River", type: "GI-Feature" },
+            { left: "Hunter", right: "Goulburn River", type: "GI-Feature" },
+            { left: "Hunter", right: "Tyrrell's", type: "GI-Producer" },
+            { left: "Hunter", right: "Brokenwood", type: "GI-Producer" },
+            { left: "Hunter", right: "Yarraman Estate", type: "GI-Producer" },
+            { left: "Hunter", right: "McWilliam's Mount Pleasant", type: "GI-Producer" },
+            { left: "Hunter", right: "Keith Tulloch Wine", type: "GI-Producer" },
+            { left: "Hunter", right: "Wyndham Estate", type: "GI-Producer" },
+            { left: "Hunter", right: "Rosemount Estate", type: "GI-Producer" },
+            { left: "Central Ranges", right: "Cowra", type: "Zone-GI" },
+            { left: "Cowra", right: "Great Dividing Range", type: "GI-Feature" },
+            { left: "Cowra", right: "Lachlan River", type: "GI-Feature" },
+            { left: "Cowra", right: "Belubula River", type: "GI-Feature" },
+            { left: "Cowra", right: "Cowra Estate", type: "GI-Producer" },
+            { left: "Cowra", right: "Windowrie Estate", type: "GI-Producer" },
+            { left: "Central Ranges", right: "Mudgee", type: "Zone-GI" },
+            { left: "Mudgee", right: "Great Dividing Range", type: "GI-Feature" },
+            { left: "Mudgee", right: "Montrose", type: "GI-Producer" },
+            { left: "Mudgee", right: "Simon Gilbert Wines", type: "GI-Producer" },
+            { left: "Central Ranges", right: "Orange", type: "Zone-GI" },
+            { left: "Orange", right: "Mount Canobolas", type: "GI-Feature" },
+            { left: "Orange", right: "Bloodwood", type: "GI-Producer" },
+            { left: "Orange", right: "Canobolas-Smith", type: "GI-Producer" },
+            { left: "Orange", right: "Word of Mouth", type: "GI-Producer" },
+            { left: "Orange", right: "Borrodell on the Mount", type: "GI-Producer" },
+            { left: "Southern New South Wales", right: "Canberra District", type: "Zone-GI" },
+            { left: "Canberra District", right: "Great Dividing Range", type: "GI-Feature" },
+            { left: "Canberra District", right: "Lake George", type: "GI-Feature" },
+            { left: "Canberra District", right: "Clonakilla", type: "GI-Producer" },
+            { left: "Canberra District", right: "Lark Hill", type: "GI-Producer" },
+            { left: "Canberra District", right: "Brindabella Hills", type: "GI-Producer" },
+            { left: "Canberra District", right: "Helm", type: "GI-Producer" },
+            { left: "Southern New South Wales", right: "Gundagai", type: "Zone-GI" },
+            { left: "Gundagai", right: "Snowy Mountains", type: "GI-Feature" },
+            { left: "Gundagai", right: "Murrumbidgee River", type: "GI-Feature" },
+            { left: "Gundagai", right: "Paterson's Gundagai Vineyard", type: "GI-Producer" },
+            { left: "Southern New South Wales", right: "Hilltops", type: "Zone-GI" },
+            { left: "Hilltops", right: "N/A", type: "GI-Feature" },
+            { left: "Hilltops", right: "Chalkers Crossing", type: "GI-Producer" },
+            { left: "Hilltops", right: "Grove Estate", type: "GI-Producer" },
+            { left: "Hilltops", right: "Barwang Vineyard", type: "GI-Producer" },
+            { left: "Southern New South Wales", right: "Tumbarumba", type: "Zone-GI" },
+            { left: "Tumbarumba", right: "Snowy Mountains", type: "GI-Feature" },
+            { left: "Tumbarumba", right: "Tumbarumba Wine Estates", type: "GI-Producer" },
+            { left: "Tumbarumba", right: "Excelsior Peak", type: "GI-Producer" },
+            { left: "South Coast", right: "Shoalhaven Coast", type: "Zone-GI" },
+            { left: "Shoalhaven Coast", right: "Pacific Ocean", type: "GI-Feature" },
+            { left: "Shoalhaven Coast", right: "Cambewarra Estate", type: "GI-Producer" },
+            { left: "Shoalhaven Coast", right: "Coolangatta Estate", type: "GI-Producer" },
+            { left: "South Coast", right: "Southern Highlands", type: "Zone-GI" },
+            { left: "Southern Highlands", right: "Great Dividing Range", type: "GI-Feature" },
+            { left: "Southern Highlands", right: "Centennial Vineyards", type: "GI-Producer" },
+            { left: "Southern Highlands", right: "Cuttaway Hill Estate", type: "GI-Producer" },
+            { left: "Big Rivers", right: "Murray Darling", type: "Zone-GI" },
+            { left: "Murray Darling", right: "Murray River", type: "GI-Feature" },
+            { left: "Murray Darling", right: "Lindemans (Karadoc)", type: "GI-Producer" },
+            { left: "Murray Darling", right: "Zilzie Wines", type: "GI-Producer" },
+            { left: "Murray Darling", right: "Deakin Estate", type: "GI-Producer" },
+            { left: "Big Rivers", right: "Perricoota", type: "Zone-GI" },
+            { left: "Perricoota", right: "Murray River", type: "GI-Feature" },
+            { left: "Perricoota", right: "St. Anne's Vineyards", type: "GI-Producer" },
+            { left: "Big Rivers", right: "Riverina", type: "Zone-GI" },
+            { left: "Riverina", right: "The Riverina Plain", type: "GI-Feature" },
+            { left: "Riverina", right: "Murrumbidgee River", type: "GI-Feature" },
+            { left: "Riverina", right: "De Bortoli", type: "GI-Producer" },
+            { left: "Riverina", right: "Casella Wines (Yellow Tail)", type: "GI-Producer" },
+            { left: "Riverina", right: "McWilliam's", type: "GI-Producer" },
+            { left: "Big Rivers", right: "Swan Hill", type: "Zone-GI" },
+            { left: "Swan Hill", right: "Murray River", type: "GI-Feature" },
+            { left: "Swan Hill", right: "Andrew Peace Wines", type: "GI-Producer" },
+            { left: "Swan Hill", right: "Buller Wines", type: "GI-Producer" },
+
+            // --- Queensland ---
+            // No explicit Zones listed for QLD, so skipping State-Zone and Zone-GI
+            { left: "Granite Belt", right: "The Granite Belt", type: "GI-Feature" },
+            { left: "Granite Belt", right: "Great Dividing Range", type: "GI-Feature" },
+            { left: "Granite Belt", right: "Robert Channon", type: "GI-Producer" },
+            { left: "Granite Belt", right: "Boireann", type: "GI-Producer" },
+            { left: "Granite Belt", right: "Ballandean Estate", type: "GI-Producer" },
+            { left: "Granite Belt", right: "Summit Estate", type: "GI-Producer" },
+            { left: "South Burnett", right: "Blackbutt Range", type: "GI-Feature" },
+            { left: "South Burnett", right: "Brisbane Range", type: "GI-Feature" },
+            { left: "South Burnett", right: "Coast Range", type: "GI-Feature" },
+            { left: "South Burnett", right: "Great Dividing Range", type: "GI-Feature" },
+            { left: "South Burnett", right: "Burnett River", type: "GI-Feature" },
+            { left: "South Burnett", right: "Clovely Estate", type: "GI-Producer" },
+            { left: "South Burnett", right: "Lightning Tree Wines", type: "GI-Producer" },
+            { left: "South Burnett", right: "Kingsley Grove Estate", type: "GI-Producer" },
+
+            // --- South Australia ---
+            { left: "South Australia", right: "Far North", type: "State-Zone" },
+            { left: "South Australia", right: "The Peninsulas", type: "State-Zone" },
+            { left: "South Australia", right: "Mount Lofty Ranges", type: "State-Zone" },
+            { left: "South Australia", right: "Barossa", type: "State-Zone" },
+            { left: "South Australia", right: "Lower Murray", type: "State-Zone" },
+            { left: "South Australia", right: "Fleurieu", type: "State-Zone" },
+            { left: "South Australia", right: "Limestone Coast", type: "State-Zone" },
+            { left: "Far North", right: "Southern Flinders Ranges", type: "Zone-GI" },
+            { left: "Southern Flinders Ranges", right: "Flinders Ranges", type: "GI-Feature" },
+            { left: "Southern Flinders Ranges", right: "Spencer Gulf", type: "GI-Feature" },
+            { left: "Southern Flinders Ranges", right: "Bundaleer Wines", type: "GI-Producer" },
+            { left: "Southern Flinders Ranges", right: "Springton Cellars", type: "GI-Producer" },
+            { left: "Mount Lofty Ranges", right: "Clare Valley", type: "Zone-GI" },
+            { left: "Clare Valley", right: "Mount Lofty Ranges", type: "GI-Feature" },
+            { left: "Clare Valley", right: "Grosset", type: "GI-Producer" },
+            { left: "Clare Valley", right: "Kilikanoon", type: "GI-Producer" },
+            { left: "Clare Valley", right: "Jim Barry", type: "GI-Producer" },
+            { left: "Clare Valley", right: "Taylors", type: "GI-Producer" },
+            { left: "Clare Valley", right: "Wendouree", type: "GI-Producer" },
+            { left: "Clare Valley", right: "Sevenhill Cellars", type: "GI-Producer" },
+            { left: "Mount Lofty Ranges", right: "Adelaide Hills", type: "Zone-GI" },
+            { left: "Adelaide Hills", right: "South Mount Lofty Ranges", type: "GI-Feature" },
+            { left: "Adelaide Hills", right: "Petaluma", type: "GI-Producer" },
+            { left: "Adelaide Hills", right: "Shaw + Smith", type: "GI-Producer" },
+            { left: "Adelaide Hills", right: "the Lane", type: "GI-Producer" },
+            { left: "Adelaide Hills", right: "Ashton Hills", type: "GI-Producer" },
+            { left: "Adelaide Hills", right: "BK Wines", type: "GI-Producer" },
+            { left: "Mount Lofty Ranges", right: "Adelaide Plains", type: "Zone-GI" },
+            { left: "Adelaide Plains", right: "Gulf of Saint Vincent", type: "GI-Feature" },
+            { left: "Adelaide Plains", right: "Primo Estate", type: "GI-Producer" },
+            { left: "Adelaide Plains", right: "Ceravolo Estate", type: "GI-Producer" },
+            { left: "Adelaide Plains", right: "Penfolds (Magill Estate)", type: "GI-Producer" },
+            { left: "Barossa", right: "Barossa Valley", type: "Zone-GI" },
+            { left: "Barossa Valley", right: "Barossa Ranges", type: "GI-Feature" },
+            { left: "Barossa Valley", right: "Seppeltsfield", type: "GI-Producer" },
+            { left: "Barossa Valley", right: "Torbreck", type: "GI-Producer" },
+            { left: "Barossa Valley", right: "Peter Lehmann", type: "GI-Producer" },
+            { left: "Barossa Valley", right: "Penfolds", type: "GI-Producer" },
+            { left: "Barossa Valley", right: "Two Hands", type: "GI-Producer" },
+            { left: "Barossa Valley", right: "Wolf Blass", type: "GI-Producer" },
+            { left: "Barossa Valley", right: "Turkey Flat", type: "GI-Producer" },
+            { left: "Barossa", right: "Eden Valley", type: "Zone-GI" },
+            { left: "Eden Valley", right: "Barossa Ranges", type: "GI-Feature" },
+            { left: "Eden Valley", right: "Henschke", type: "GI-Producer" },
+            { left: "Eden Valley", right: "Pewsey Vale", type: "GI-Producer" },
+            { left: "Eden Valley", right: "Yalumba", type: "GI-Producer" },
+            { left: "Eden Valley", right: "Mountadam", type: "GI-Producer" },
+            { left: "Lower Murray", right: "Riverland", type: "Zone-GI" },
+            { left: "Riverland", right: "Murray River", type: "GI-Feature" },
+            { left: "Riverland", right: "Oxford Landing", type: "GI-Producer" },
+            { left: "Riverland", right: "Banrock Station", type: "GI-Producer" },
+            { left: "Riverland", right: "Kingston Estate", type: "GI-Producer" },
+            { left: "Fleurieu", right: "McLaren Vale", type: "Zone-GI" },
+            { left: "McLaren Vale", right: "Gulf of Saint Vincent", type: "GI-Feature" },
+            { left: "McLaren Vale", right: "Adelaide Hills", type: "GI-Feature" },
+            { left: "McLaren Vale", right: "Chapel Hill", type: "GI-Producer" },
+            { left: "McLaren Vale", right: "Clarendon Hills", type: "GI-Producer" },
+            { left: "McLaren Vale", right: "d'Arenberg", type: "GI-Producer" },
+            { left: "McLaren Vale", right: "Pirramimma", type: "GI-Producer" },
+            { left: "McLaren Vale", right: "Rosemount Estate", type: "GI-Producer" },
+            { left: "McLaren Vale", right: "Wirra Wirra", type: "GI-Producer" },
+            { left: "McLaren Vale", right: "Kay Bros. Amery", type: "GI-Producer" },
+            { left: "McLaren Vale", right: "Mitolo", type: "GI-Producer" },
+            { left: "McLaren Vale", right: "Yangarra", type: "GI-Producer" },
+            { left: "McLaren Vale", right: "Hickinbotham", type: "GI-Producer" },
+            { left: "Fleurieu", right: "Langhorne Creek", type: "Zone-GI" },
+            { left: "Langhorne Creek", right: "Lake Alexandrina", type: "GI-Feature" },
+            { left: "Langhorne Creek", right: "Bremer River", type: "GI-Feature" },
+            { left: "Langhorne Creek", right: "Angas River", type: "GI-Feature" },
+            { left: "Langhorne Creek", right: "Bremerton Wines", type: "GI-Producer" },
+            { left: "Langhorne Creek", right: "Bleasdale Vineyards", type: "GI-Producer" },
+            { left: "Langhorne Creek", right: "Temple Bruer", type: "GI-Producer" },
+            { left: "Fleurieu", right: "Currency Creek", type: "Zone-GI" },
+            { left: "Currency Creek", right: "Murray River (mouth)", type: "GI-Feature" },
+            { left: "Currency Creek", right: "Lake Alexandrina", type: "GI-Feature" },
+            { left: "Currency Creek", right: "Encounter Bay", type: "GI-Feature" },
+            { left: "Currency Creek", right: "Currency Creek Estate", type: "GI-Producer" },
+            { left: "Currency Creek", right: "Stonemason", type: "GI-Producer" },
+            { left: "Fleurieu", right: "Kangaroo Island", type: "Zone-GI" },
+            { left: "Kangaroo Island", right: "Southern Ocean", type: "GI-Feature" },
+            { left: "Kangaroo Island", right: "Islander Estate", type: "GI-Producer" },
+            { left: "Kangaroo Island", right: "Cape d'Estaing", type: "GI-Producer" },
+            { left: "Fleurieu", right: "Southern Fleurieu", type: "Zone-GI" },
+            { left: "Southern Fleurieu", right: "Southern Ocean", type: "GI-Feature" },
+            { left: "Southern Fleurieu", right: "Gulf of St. Vincent", type: "GI-Feature" },
+            { left: "Southern Fleurieu", right: "Parri Estate", type: "GI-Producer" },
+            { left: "Limestone Coast", right: "Coonawarra", type: "Zone-GI" },
+            { left: "Coonawarra", right: "none", type: "GI-Feature" },
+            { left: "Coonawarra", right: "Majella", type: "GI-Producer" },
+            { left: "Coonawarra", right: "Penley Estate", type: "GI-Producer" },
+            { left: "Coonawarra", right: "Balnaves of Coonawarra", type: "GI-Producer" },
+            { left: "Coonawarra", right: "Wynns Coonawarra Estate", type: "GI-Producer" },
+            { left: "Coonawarra", right: "Zema Estate", type: "GI-Producer" },
+            { left: "Limestone Coast", right: "Padthaway", type: "Zone-GI" },
+            // No features listed for Padthaway
+            { left: "Padthaway", right: "Padthaway Estate", type: "GI-Producer" },
+            { left: "Padthaway", right: "Stonehaven", type: "GI-Producer" },
+            { left: "Padthaway", right: "Browns of Padthaway", type: "GI-Producer" },
+            { left: "Limestone Coast", right: "Mount Benson", type: "Zone-GI" },
+            { left: "Mount Benson", right: "Southern Ocean", type: "GI-Feature" },
+            { left: "Mount Benson", right: "Cape Jaffa", type: "GI-Producer" },
+            { left: "Mount Benson", right: "Norfolk Rise Vineyard", type: "GI-Producer" },
+            { left: "Limestone Coast", right: "Robe", type: "Zone-GI" },
+            { left: "Robe", right: "Southern Ocean", type: "GI-Feature" },
+            { left: "Robe", right: "Lake George", type: "GI-Feature" },
+            { left: "Robe", right: "Lake Eliza", type: "GI-Feature" },
+            { left: "Robe", right: "Lake St. Clair", type: "GI-Feature" },
+            // No key producers listed for Robe
+            { left: "Limestone Coast", right: "Wrattonbully", type: "Zone-GI" },
+            { left: "Wrattonbully", right: "Stewarts Range", type: "GI-Feature" },
+            { left: "Wrattonbully", right: "Naracoorte Range", type: "GI-Feature" },
+            { left: "Wrattonbully", right: "Caves Range", type: "GI-Feature" },
+            { left: "Wrattonbully", right: "Hynam Range", type: "GI-Feature" },
+            { left: "Wrattonbully", right: "World Heritage Naracoorte Caves", type: "GI-Feature" },
+            { left: "Wrattonbully", right: "Tapanappa", type: "GI-Producer" },
+            { left: "Limestone Coast", right: "Mount Gambier", type: "Zone-GI" },
+            { left: "Mount Gambier", right: "Southern Ocean", type: "GI-Feature" },
+            { left: "Mount Gambier", right: "Caroline Hills", type: "GI-Producer" },
+            
+            // --- Tasmania ---
+            { left: "Tasmania", right: "South Eastern Australia", type: "State-Zone" },
+            // No explicit Zone-GI for Tas, as Tas is the GI.
+            // No Major Natural Features listed for Tasmania
+            { left: "Tasmania", right: "Pipers Brook Vineyard", type: "GI-Producer" },
+            { left: "Tasmania", right: "Tamar Ridge", type: "GI-Producer" },
+            { left: "Tasmania", right: "Jansz", type: "GI-Producer" },
+            { left: "Tasmania", right: "Bay of Fires/House of Arras", type: "GI-Producer" },
+            { left: "Tasmania", right: "Rosevears Estate", type: "GI-Producer" },
+            { left: "Tasmania", right: "Domaine A", type: "GI-Producer" },
+            { left: "Tasmania", right: "Elsewhere Vineyard", type: "GI-Producer" },
+            { left: "Tasmania", right: "Stefano Lubiana", type: "GI-Producer" },
+
+            // --- Victoria ---
+            { left: "Victoria", right: "North West Victoria", type: "State-Zone" },
+            { left: "Victoria", right: "Western Victoria", type: "State-Zone" },
+            { left: "Victoria", right: "Central Victoria", type: "State-Zone" },
+            { left: "Victoria", right: "Port Phillip", type: "State-Zone" },
+            { left: "Victoria", right: "North East Victoria", type: "State-Zone" },
+            { left: "Victoria", right: "Gippsland", type: "State-Zone" },
+            { left: "North West Victoria", right: "Murray Darling", type: "Zone-GI" },
+            // Murray Darling features/producers already listed under NSW
+            { left: "North West Victoria", right: "Swan Hill", type: "Zone-GI" },
+            // Swan Hill features/producers already listed under NSW
+            { left: "Western Victoria", right: "Grampians", type: "Zone-GI" },
+            { left: "Grampians", right: "Grampians National Park", type: "GI-Feature" },
+            { left: "Grampians", right: "Best's Wines", type: "GI-Producer" },
+            { left: "Grampians", right: "Grampians Estate", type: "GI-Producer" },
+            { left: "Grampians", right: "Seppelt Great Western", type: "GI-Producer" },
+            { left: "Grampians", right: "Mount Langi Ghiran Vineyards", type: "GI-Producer" },
+            { left: "Western Victoria", right: "Henty", type: "Zone-GI" },
+            { left: "Henty", right: "Southern Ocean", type: "GI-Feature" },
+            { left: "Henty", right: "Seppelt (Drumborg)", type: "GI-Producer" },
+            { left: "Henty", right: "Tarrington Vineyards", type: "GI-Producer" },
+            { left: "Henty", right: "Crawford River", type: "GI-Producer" },
+            { left: "Henty", right: "Bochara Wines", type: "GI-Producer" },
+            { left: "Western Victoria", right: "Pyrenees", type: "Zone-GI" },
+            { left: "Pyrenees", right: "Pyrenees Range", type: "GI-Feature" },
+            { left: "Pyrenees", right: "Blue Pyrenees Estate", type: "GI-Producer" },
+            { left: "Pyrenees", right: "Dalwhinnie", type: "GI-Producer" },
+            { left: "Pyrenees", right: "Summerfield", type: "GI-Producer" },
+            { left: "Central Victoria", right: "Bendigo", type: "Zone-GI" },
+            { left: "Bendigo", right: "None", type: "GI-Feature" },
+            { left: "Bendigo", right: "Balgownie Estate", type: "GI-Producer" },
+            { left: "Central Victoria", right: "Goulburn Valley", type: "Zone-GI" },
+            { left: "Goulburn Valley", right: "Goulburn River", type: "GI-Feature" },
+            { left: "Goulburn Valley", right: "Tahbilk", type: "GI-Producer" },
+            { left: "Goulburn Valley", right: "Monichino Wines", type: "GI-Producer" },
+            { left: "Central Victoria", right: "Heathcote", type: "Zone-GI" },
+            { left: "Heathcote", right: "Mt. Camel Range", type: "GI-Feature" },
+            { left: "Heathcote", right: "Jasper Hill", type: "GI-Producer" },
+            { left: "Heathcote", right: "Domaines Tatiarra", type: "GI-Producer" },
+            { left: "Heathcote", right: "Heathcote Winery", type: "GI-Producer" },
+            { left: "Central Victoria", right: "Strathbogie Ranges", type: "Zone-GI" },
+            { left: "Strathbogie Ranges", right: "Strathbogie Ranges", type: "GI-Feature" },
+            { left: "Strathbogie Ranges", right: "Plunkett", type: "GI-Producer" },
+            { left: "Strathbogie Ranges", right: "Dominion Wines", type: "GI-Producer" },
+            { left: "Central Victoria", right: "Upper Goulburn", type: "Zone-GI" },
+            { left: "Upper Goulburn", right: "Goulburn River", type: "GI-Feature" },
+            { left: "Upper Goulburn", right: "Lake Eildon", type: "GI-Feature" },
+            { left: "Upper Goulburn", right: "Great Dividing Range", type: "GI-Feature" },
+            { left: "Upper Goulburn", right: "Delatite", type: "GI-Producer" },
+            { left: "Gippsland", right: "Gippsland", type: "Zone-GI" },
+            { left: "Gippsland", right: "Bass Strait/Southern Ocean", type: "GI-Feature" },
+            { left: "Gippsland", right: "Great Dividing Range", type: "GI-Feature" },
+            { left: "Gippsland", right: "Bass Phillip", type: "GI-Producer" },
+            { left: "Gippsland", right: "Caledonia Australis", type: "GI-Producer" },
+            { left: "North East Victoria", right: "Alpine Valleys", type: "Zone-GI" },
+            { left: "Alpine Valleys", right: "Victorian Alps", type: "GI-Feature" },
+            { left: "Alpine Valleys", right: "Gapsted Wines (Victorian Alps Wine Co.)", type: "GI-Producer" },
+            { left: "North East Victoria", right: "Beechworth", type: "Zone-GI" },
+            { left: "Beechworth", right: "Victorian Alps", type: "GI-Feature" },
+            { left: "Beechworth", right: "Giaconda", type: "GI-Producer" },
+            { left: "Beechworth", right: "Sorrenberg", type: "GI-Producer" },
+            { left: "Beechworth", right: "Castagna Vineyard", type: "GI-Producer" },
+            { left: "Beechworth", right: "Golden Ball", type: "GI-Producer" },
+            { left: "North East Victoria", right: "Glenrowan", type: "Zone-GI" },
+            { left: "Glenrowan", right: "Warby Ranges", type: "GI-Feature" },
+            { left: "Glenrowan", right: "Lake Mokoan", type: "GI-Feature" },
+            { left: "Glenrowan", right: "Baileys of Glenrowan", type: "GI-Producer" },
+            { left: "Glenrowan", right: "Goorambath", type: "GI-Producer" },
+            { left: "Glenrowan", right: "Judds Warby Range Estate", type: "GI-Producer" },
+            { left: "North East Victoria", right: "King Valley", type: "Zone-GI" },
+            { left: "King Valley", right: "King River", type: "GI-Feature" },
+            { left: "King Valley", right: "Oxley Plains", type: "GI-Feature" },
+            { left: "King Valley", right: "Victorian Alps", type: "GI-Feature" },
+            { left: "King Valley", right: "Brown Brothers", type: "GI-Producer" },
+            { left: "North East Victoria", right: "Rutherglen", type: "Zone-GI" },
+            { left: "Rutherglen", right: "Murray River", type: "GI-Feature" },
+            { left: "Rutherglen", right: "Victorian Alps", type: "GI-Feature" },
+            { left: "Rutherglen", right: "Campbells", type: "GI-Producer" },
+            { left: "Rutherglen", right: "Chambers", type: "GI-Producer" },
+            { left: "Rutherglen", right: "All Saints", type: "GI-Producer" },
+            { left: "Rutherglen", right: "Morris", type: "GI-Producer" },
+            { left: "Rutherglen", right: "Pfeiffer", type: "GI-Producer" },
+            { left: "Rutherglen", right: "Stanton & Killeen", type: "GI-Producer" },
+            { left: "Port Phillip", right: "Geelong", type: "Zone-GI" },
+            { left: "Geelong", right: "Port Phillip Bay", type: "GI-Feature" },
+            { left: "Geelong", right: "Bass Strait", type: "GI-Feature" },
+            { left: "Geelong", right: "Moorabool River", type: "GI-Feature" },
+            { left: "Geelong", right: "Leigh River", type: "GI-Feature" },
+            { left: "Geelong", right: "Barwon River", type: "GI-Feature" },
+            { left: "Geelong", right: "Shadowfax", type: "GI-Producer" },
+            { left: "Geelong", right: "By Farr", type: "GI-Producer" },
+            { left: "Geelong", right: "Bannockburn", type: "GI-Producer" },
+            { left: "Geelong", right: "Austins Wines", type: "GI-Producer" },
+            { left: "Port Phillip", right: "Macedon Ranges", type: "Zone-GI" },
+            { left: "Macedon Ranges", right: "Macedon Range", type: "GI-Feature" },
+            { left: "Macedon Ranges", right: "Bindi", type: "GI-Producer" },
+            { left: "Macedon Ranges", right: "Curly Flat", type: "GI-Producer" },
+            { left: "Macedon Ranges", right: "Hanging Rock", type: "GI-Producer" },
+            { left: "Macedon Ranges", right: "Granite Hills", type: "GI-Producer" },
+            { left: "Port Phillip", right: "Mornington Peninsula", type: "Zone-GI" },
+            { left: "Mornington Peninsula", right: "Bass Strait", type: "GI-Feature" },
+            { left: "Mornington Peninsula", right: "Port Phillip Bay", type: "GI-Feature" },
+            { left: "Mornington Peninsula", right: "Western Port Bay", type: "GI-Feature" },
+            { left: "Mornington Peninsula", right: "Main Ridge Estate", type: "GI-Producer" },
+            { left: "Mornington Peninsula", right: "Willow Creek Vineyard", type: "GI-Producer" },
+            { left: "Mornington Peninsula", right: "Kooyong", type: "GI-Producer" },
+            { left: "Mornington Peninsula", right: "Paringa Estate", type: "GI-Producer" },
+            { left: "Mornington Peninsula", right: "Stonier Wines", type: "GI-Producer" },
+            { left: "Mornington Peninsula", right: "Yabby Lake", type: "GI-Producer" },
+            { left: "Mornington Peninsula", right: "Ocean Eight", type: "GI-Producer" },
+            { left: "Port Phillip", right: "Sunbury", type: "Zone-GI" },
+            { left: "Sunbury", right: "Macedon Ranges", type: "GI-Feature" },
+            { left: "Sunbury", right: "Port Phillip Bay", type: "GI-Feature" },
+            { left: "Sunbury", right: "Craiglee", type: "GI-Producer" },
+            { left: "Sunbury", right: "Goona Warra Vineyard", type: "GI-Producer" },
+            { left: "Port Phillip", right: "Yarra Valley", type: "Zone-GI" },
+            { left: "Yarra Valley", right: "Yarra Ranges/Great Dividing Range", type: "GI-Feature" },
+            { left: "Yarra Valley", right: "Southern Ocean", type: "GI-Feature" },
+            { left: "Yarra Valley", right: "Yering Station", type: "GI-Producer" },
+            { left: "Yarra Valley", right: "Yarra Yering", type: "GI-Producer" },
+            { left: "Yarra Valley", right: "Mount Mary", type: "GI-Producer" },
+            { left: "Yarra Valley", right: "Domaine Chandon", type: "GI-Producer" },
+            { left: "Yarra Valley", right: "De Bortoli", type: "GI-Producer" },
+            { left: "Yarra Valley", right: "Yarra Yarra", type: "GI-Producer" },
+            { left: "Yarra Valley", right: "Coldstream Hills", type: "GI-Producer" },
+            { left: "Yarra Valley", right: "Oakridge", type: "GI-Producer" },
+            { left: "Yarra Valley", right: "Giant Steps", type: "GI-Producer" },
+            { left: "Yarra Valley", right: "Mac Forbes", type: "GI-Producer" },
+
+            // --- Western Australia ---
+            { left: "Western Australia", right: "South West Australia", type: "State-Zone" },
+            { left: "Western Australia", right: "Greater Perth", type: "State-Zone" },
+            { left: "Western Australia", right: "Central Western Australia", type: "State-Zone" },
+            { left: "Western Australia", right: "West Australian South East Coastal", type: "State-Zone" },
+            { left: "Western Australia", right: "Eastern Plains, Inland & North of Western Australia", type: "State-Zone" },
+            { left: "South West Australia", right: "Margaret River", type: "Zone-GI" },
+            { left: "Margaret River", right: "Leeuwin-Naturaliste Ridge", type: "GI-Feature" },
+            { left: "Margaret River", right: "Indian Ocean", type: "GI-Feature" },
+            { left: "Margaret River", right: "Southern Ocean", type: "GI-Feature" },
+            { left: "Margaret River", right: "Geographe Bay", type: "GI-Feature" },
+            { left: "Margaret River", right: "Leeuwin Estate", type: "GI-Producer" },
+            { left: "Margaret River", right: "Cullen", type: "GI-Producer" },
+            { left: "Margaret River", right: "Cape Mentelle", type: "GI-Producer" },
+            { left: "Margaret River", right: "Vasse Felix", type: "GI-Producer" },
+            { left: "Margaret River", right: "Moss Wood", type: "GI-Producer" },
+            { left: "South West Australia", right: "Geographe", type: "Zone-GI" },
+            { left: "Geographe", right: "Geographe Bay/Indian Ocean", type: "GI-Feature" },
+            { left: "Geographe", right: "Darling Range", type: "GI-Feature" },
+            { left: "Geographe", right: "Whicher Range", type: "GI-Feature" },
+            { left: "Geographe", right: "Capel Vale", type: "GI-Producer" },
+            { left: "Geographe", right: "Willow Bridge Estate", type: "GI-Producer" },
+            { left: "South West Australia", right: "Blackwood Valley", type: "Zone-GI" },
+            { left: "Blackwood Valley", right: "Darling Plateau", type: "GI-Feature" },
+            { left: "Blackwood Valley", right: "Blackwood Crest", type: "GI-Producer" },
+            { left: "South West Australia", right: "Manjimup", type: "Zone-GI" },
+            { left: "Manjimup", right: "Warren River Valley", type: "GI-Feature" },
+            { left: "Manjimup", right: "Peos Estate", type: "GI-Producer" },
+            { left: "Manjimup", right: "Yanmah Ridge", type: "GI-Producer" },
+            { left: "South West Australia", right: "Pemberton", type: "Zone-GI" },
+            { left: "Pemberton", right: "Warren River", type: "GI-Feature" },
+            { left: "Pemberton", right: "Donnelly River", type: "GI-Feature" },
+            { left: "Pemberton", right: "Salitage", type: "GI-Producer" },
+            { left: "South West Australia", right: "Great Southern", type: "Zone-GI" },
+            { left: "Great Southern", right: "Southern Ocean", type: "GI-Feature" },
+            // Great Southern GIs
+            { left: "Great Southern", right: "Denmark", type: "Zone-GI" }, // Denmark is a Subregion/GI within the Great Southern GI/Region. This is a Zone -> GI mapping.
+            { left: "Denmark", right: "Southern Ocean", type: "GI-Feature" },
+            { left: "Denmark", right: "Singlefile Estate", type: "GI-Producer" },
+            { left: "Denmark", right: "Harewood Estate", type: "GI-Producer" },
+            { left: "Denmark", right: "Moombaki", type: "GI-Producer" },
+            { left: "Denmark", right: "Howard Park", type: "GI-Producer" },
+            { left: "Denmark", right: "Yilgarnia", type: "GI-Producer" },
+            { left: "Great Southern", right: "Albany", type: "Zone-GI" },
+            { left: "Albany", right: "Southern Ocean", type: "GI-Feature" },
+            { left: "Albany", right: "Montgomery's Hill", type: "GI-Producer" },
+            { left: "Albany", right: "Wignalls Wines", type: "GI-Producer" },
+            { left: "Albany", right: "Two People's Bay Wines", type: "GI-Producer" },
+            { left: "Great Southern", right: "Porongurup", type: "Zone-GI" },
+            { left: "Porongurup", right: "Porongurups Range", type: "GI-Feature" },
+            { left: "Porongurup", right: "Castle Rock Estate", type: "GI-Producer" },
+            { left: "Porongurup", right: "Gibraltar Rock", type: "GI-Producer" },
+            { left: "Great Southern", right: "Frankland River", type: "Zone-GI" },
+            { left: "Frankland River", right: "Southern Ocean", type: "GI-Feature" },
+            { left: "Frankland River", right: "Alkoomi", type: "GI-Producer" },
+            { left: "Frankland River", right: "Ferngrove Vineyards", type: "GI-Producer" },
+            { left: "Frankland River", right: "Frankland Estate", type: "GI-Producer" },
+            { left: "Great Southern", right: "Mount Barker", type: "Zone-GI" },
+            { left: "Mount Barker", right: "Plantagenet Plateau", type: "GI-Feature" },
+            { left: "Mount Barker", right: "Mount Barker Hill", type: "GI-Feature" },
+            { left: "Mount Barker", right: "Forest Hill Vineyard", type: "GI-Producer" },
+            { left: "Mount Barker", right: "Plantagenet", type: "GI-Producer" },
+            // Greater Perth Zone GIs
+            { left: "Greater Perth", right: "Peel", type: "Zone-GI" },
+            { left: "Greater Perth", right: "Perth Hills", type: "Zone-GI" },
+            { left: "Greater Perth", right: "Swan District", type: "Zone-GI" },
+            // Doc does not contain detailed entries for Peel, Perth Hills, or Swan District GIs.
+        ];
+
+        // --- Create specialized data arrays ---
+        const stateZoneQuestions = gameData.filter(q => q.type === 'State-Zone');
+        const zoneGIQuestions = gameData.filter(q => q.type === 'Zone-GI');
+        const giFeatureQuestions = gameData.filter(q => q.type === 'GI-Feature' && q.right !== 'N/A' && q.right !== 'none');
+        const giProducerQuestions = gameData.filter(q => q.type === 'GI-Producer');
+
+        const allZones = [...new Set(stateZoneQuestions.map(q => q.right))];
+        const allGIs = [...new Set(zoneGIQuestions.map(q => q.right))];
+        const allFeatures = [...new Set(giFeatureQuestions.map(q => q.right))];
+        const allProducers = [...new Set(giProducerQuestions.map(q => q.right))];
+
+        const positiveMessages = ["Great job!", "Good work.", "What a pro!", "Awesome!", "You're on a roll!", "Magnifique!", "Superb!"];
+        const TOTAL_ROUNDS = 20;
+
+        // --- GAME STATE ---
+        let score = 0;
+        let currentRound = 1;
+        let gameQuestions = [];
+        let currentQuestion = {};
+        let attempts = 0;
+
+        // --- DOM ELEMENTS ---
+        const gameContainer = document.getElementById('game-container');
+        const startModal = document.getElementById('start-modal');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const scoreInfo = document.getElementById('score-info');
+        const roundInfo = document.getElementById('round-info');
+        const matchPrompt = document.getElementById('match-prompt');
+        const itemToMatch = document.getElementById('item-to-match');
+        const choicesTitle = document.getElementById('choices-title');
+        const choicesContainer = document.getElementById('choices-container');
+        const successModal = document.getElementById('success-modal');
+        const gameOverModal = document.getElementById('game-over-modal');
+        const nextRoundBtn = document.getElementById('next-round-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+
+        // --- FUNCTIONS ---
+
+        /**
+         * Shuffles an array in place.
+         * @param {Array} array The array to shuffle.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        /**
+         * Initializes the game or starts a new one.
+         */
+        function initGame() {
+            score = 0;
+            currentRound = 1;
+
+            // Shuffle each question type
+            shuffleArray(stateZoneQuestions);
+            shuffleArray(zoneGIQuestions);
+            shuffleArray(giFeatureQuestions);
+            shuffleArray(giProducerQuestions);
+
+            // Build the 20-round game
+            gameQuestions = [
+                ...stateZoneQuestions.slice(0, 5),
+                ...zoneGIQuestions.slice(0, 5),
+                ...giFeatureQuestions.slice(0, 5),
+                ...giProducerQuestions.slice(0, 5)
+            ];
+            
+            startRound();
+        }
+        
+        /**
+         * Starts a new round.
+         */
+        function startRound() {
+            if (currentRound > TOTAL_ROUNDS) {
+                showGameOver();
+                return;
+            }
+
+            // Reset round state
+            attempts = 0;
+            currentQuestion = gameQuestions[currentRound - 1];
+
+            itemToMatch.textContent = currentQuestion.left;
+            updateScoreboard();
+            renderButtons();
+        }
+
+        /**
+         * Renders the choice buttons for the current round.
+         */
+        function renderButtons() {
+            choicesContainer.innerHTML = '';
+            const correctAnswer = currentQuestion.right;
+            const type = currentQuestion.type;
+            let distractorPool = [];
+            
+            // Set titles and distractor pool based on round type
+            switch (type) {
+                case 'State-Zone':
+                    matchPrompt.textContent = "Match the State:";
+                    choicesTitle.textContent = "Zone";
+                    distractorPool = allZones;
+                    break;
+                case 'Zone-GI':
+                    matchPrompt.textContent = "Match the Zone:";
+                    choicesTitle.textContent = "Geographical Indication (GI)";
+                    distractorPool = allGIs;
+                    break;
+                case 'GI-Feature':
+                    matchPrompt.textContent = "Match the GI:";
+                    choicesTitle.textContent = "Major Natural Feature";
+                    distractorPool = allFeatures;
+                    break;
+                case 'GI-Producer':
+                    matchPrompt.textContent = "Match the GI:";
+                    choicesTitle.textContent = "Key Producer";
+                    distractorPool = allProducers;
+                    break;
+            }
+
+            // Get 4 incorrect answers
+            const incorrectAnswers = distractorPool.filter(item => item !== correctAnswer);
+            shuffleArray(incorrectAnswers);
+            
+            const choices = [correctAnswer, ...incorrectAnswers.slice(0, 4)];
+            shuffleArray(choices); // Shuffle the final 5 choices
+
+            choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice;
+                button.classList.add('btn-choice', 'w-full', 'text-left', 'p-4', 'rounded-lg', 'font-semibold');
+                button.onclick = () => handleSelection(choice, button);
+                choicesContainer.appendChild(button);
+            });
+        }
+        
+        /**
+         * Handles the player's selection.
+         * @param {string} value - The selected value.
+         * @param {HTMLElement} button - The button element that was clicked.
+         */
+        function handleSelection(value, button) {
+            attempts++;
+            const isCorrect = (value === currentQuestion.right);
+
+            if (isCorrect) {
+                // Award points
+                if (attempts === 1) {
+                    score += 2; // 2 points for a correct answer on the first try
+                } else {
+                    score += 1; // 1 point for a correct answer on subsequent tries
+                }
+
+                button.classList.add('correct');
+                // Disable all buttons
+                Array.from(choicesContainer.children).forEach(btn => {
+                    btn.disabled = true;
+                });
+
+                setTimeout(showSuccessModal, 500);
+
+            } else {
+                // Decrement score but not below zero
+                score = Math.max(0, score - 1);
+                button.classList.add('incorrect');
+                button.disabled = true; // Disable incorrect guess
+                
+                // Remove incorrect class after animation
+                setTimeout(() => {
+                    button.classList.remove('incorrect');
+                }, 500);
+            }
+
+            updateScoreboard();
+        }
+
+        /**
+         * Updates the score and round display.
+         */
+        function updateScoreboard() {
+            scoreInfo.textContent = score;
+            roundInfo.textContent = `${Math.min(currentRound, TOTAL_ROUNDS)} / ${TOTAL_ROUNDS}`;
+        }
+        
+        /**
+         * Shows the success modal with a random message.
+         */
+        function showSuccessModal() {
+            const modalMessage = document.getElementById('modal-message');
+            const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
+            modalMessage.textContent = randomMessage;
+            
+            successModal.classList.remove('hidden');
+            setTimeout(() => {
+                successModal.firstElementChild.classList.remove('scale-95', 'opacity-0');
+            }, 10);
+        }
+
+        /**
+         * Hides the success modal and starts the next round.
+         */
+        function hideSuccessModal() {
+            successModal.firstElementChild.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                successModal.classList.add('hidden');
+                currentRound++;
+                startRound();
+            }, 200);
+        }
+
+        /**
+         * Shows the game over screen with a final score, percentage, and message.
+         */
+        function showGameOver() {
+            const finalScoreEl = document.getElementById('final-score');
+            const finalPercentageEl = document.getElementById('final-percentage');
+            const finalMessageEl = document.getElementById('final-score-message');
+
+            // Max score is 2 points per round on first try
+            const maxScore = TOTAL_ROUNDS * 2;
+            const percentage = Math.round(Math.max(0, (score / maxScore) * 100));
+
+            let message = '';
+            if (percentage === 100) {
+                message = "Perfect Score!";
+            } else if (percentage >= 90) {
+                message = "You're a Master!";
+            } else if (percentage >= 80) {
+                message = "Superb!";
+            } else if (percentage >= 70) {
+                message = "Great work.";
+            } else if (percentage >= 50) {
+                message = "Nicely done!";
+            } else {
+                message = "Keep practicing!";
+            }
+
+            finalScoreEl.textContent = score;
+            finalPercentageEl.textContent = `${percentage}%`;
+            finalMessageEl.textContent = message;
+            
+            gameOverModal.classList.remove('hidden');
+            setTimeout(() => {
+                gameOverModal.firstElementChild.classList.remove('scale-95', 'opacity-0');
+            }, 10);
+        }
+
+        /**
+         * Hides the game over screen and starts a new game.
+         */
+        function hideGameOver() {
+            gameOverModal.firstElementChild.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                gameOverModal.classList.add('hidden');
+                initGame();
+            }, 200);
+        }
+
+        // --- EVENT LISTENERS ---
+        startGameBtn.addEventListener('click', () => {
+            startModal.classList.add('hidden');
+            gameContainer.classList.remove('hidden');
+            initGame();
+        });
+        
+        nextRoundBtn.addEventListener('click', hideSuccessModal);
+        playAgainBtn.addEventListener('click', hideGameOver);
+
+    </script>
+</body>
+</html>
