@@ -14,7 +14,7 @@
             background-color: #FDF8F2; /* Creamy background */
             color: #4B3F3F; /* Dark brown text */
         }
-        h1, h2, h3 {
+        h1, h2, h3, h4, h5 {
             font-family: 'Playfair Display', serif;
         }
         .game-card {
@@ -64,6 +64,72 @@
             background-color: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(5px);
         }
+
+        /* --- New Database Explorer Styles --- */
+        .db-item {
+            padding: 12px 16px;
+            background-color: #fff;
+            border: 1px solid #DED1C1;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            position: relative;
+            padding-right: 40px; /* Space for arrow */
+        }
+        .db-item:hover {
+            background-color: #FDF8F2;
+        }
+        .db-item::after { /* Arrow icon */
+            content: '▼';
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%) rotate(0deg);
+            transition: transform 0.3s ease;
+            font-size: 0.8em;
+            color: #8c7d7d;
+        }
+        .db-item.expanded::after {
+            transform: translateY(-50%) rotate(-180deg);
+        }
+        .db-item-no-click {
+            padding: 12px 16px;
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            font-weight: 700;
+            color: #999;
+            cursor: not-allowed;
+        }
+        .db-item-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            padding-left: 1.5rem; /* Indentation */
+        }
+        .db-item-content.expanded {
+            max-height: 2000px; /* Arbitrary large height */
+            transition: max-height 0.5s ease-in;
+        }
+        .db-zone { background-color: #fff; }
+        .db-gi { background-color: #fcfaf7; }
+        .db-gi-details {
+            background: #FDF8F2;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px dashed #DED1C1;
+        }
+        .db-gi-details h5 {
+            font-weight: 700;
+            color: #4B3F3F;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+        .db-gi-details ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -80,14 +146,11 @@
                     <li>Rounds 11-15: Match <strong>GI</strong> to <strong>Natural Feature</strong>.</li>
                     <li>Rounds 16-20: Match <strong>GI</strong> to <strong>Key Producer</strong>.</li>
                 </ul>
-                <p><strong class="text-red-800">SCORING:</strong></p>
-                <ul class="list-disc list-inside pl-4 text-gray-600">
-                    <li><span class="font-bold text-green-700">+2 points</span> for a correct match on the first try (for that pair).</li>
-                    <li><span class="font-bold text-green-700">+1 point</span> for a correct match on subsequent tries.</li>
-                    <li><span class="font-bold text-red-700">-1 point</span> for an incorrect match (min. score is 0).</li>
-                </ul>
             </div>
-            <button id="start-game-btn" class="w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-xl">Start Game</button>
+            <div class="flex flex-col space-y-3">
+                <button id="start-game-btn" class="w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-xl">Start Game</button>
+                <button id="explore-data-btn" class="w-full bg-gray-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors text-xl">Explore Data</button>
+            </div>
         </div>
     </div>
 
@@ -147,6 +210,19 @@
             <button id="play-again-btn" class="w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors">Play Again</button>
         </div>
     </div>
+
+    <div id="database-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-3xl w-full h-5/6 transform transition-all flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-4xl font-bold text-red-900">Data Explorer</h2>
+                <button id="close-db-btn" class="text-3xl font-bold text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            <p class="text-lg mb-4 text-gray-700">Click any item to expand and see its contents.</p>
+            <div id="database-container" class="flex-grow overflow-y-auto space-y-2 pr-2">
+                </div>
+        </div>
+    </div>
+
 
     <script>
         // --- DATA ---
@@ -251,7 +327,9 @@
             { left: "Swan Hill", right: "Buller Wines", type: "GI-Producer" },
 
             // --- Queensland ---
-            // No explicit Zones listed for QLD, so skipping State-Zone and Zone-GI
+            { left: "Queensland", right: "Queensland", type: "State-Zone" }, // Dummy zone for structure
+            { left: "Queensland", right: "Granite Belt", type: "Zone-GI" },
+            { left: "Queensland", right: "South Burnett", type: "Zone-GI" },
             { left: "Granite Belt", right: "The Granite Belt", type: "GI-Feature" },
             { left: "Granite Belt", right: "Great Dividing Range", type: "GI-Feature" },
             { left: "Granite Belt", right: "Robert Channon", type: "GI-Producer" },
@@ -388,9 +466,8 @@
             { left: "Mount Gambier", right: "Caroline Hills", type: "GI-Producer" },
             
             // --- Tasmania ---
-            { left: "Tasmania", right: "South Eastern Australia", type: "State-Zone" },
-            // No explicit Zone-GI for Tas, as Tas is the GI.
-            // No Major Natural Features listed for Tasmania
+            { left: "Tasmania", right: "South Eastern Australia", type: "State-Zone" }, // Per source 4
+            { left: "South Eastern Australia", right: "Tasmania", type: "Zone-GI" },
             { left: "Tasmania", right: "Pipers Brook Vineyard", type: "GI-Producer" },
             { left: "Tasmania", right: "Tamar Ridge", type: "GI-Producer" },
             { left: "Tasmania", right: "Jansz", type: "GI-Producer" },
@@ -612,11 +689,11 @@
         let currentRound = 1;
         let gameRounds = []; // This will be an array of 20 arrays (each inner array has 5 pairs)
         let currentRoundPairs = []; // The 5 pairs for the current round
-        let correctPairs = new Map();
-        let itemAttempts = new Map();
+        let leftToRightPairs = new Map(); // Stores all correct matches, e.g. "NSW" -> Set("Hunter", "Big Rivers")
+        let itemAttempts = new Map(); // Tracks attempts per *button*, e.g. "left-0" -> 1
         let matchesMade = 0;
-        let selectedLeft = null;
-        let selectedRight = null;
+        let selectedLeft = null;  // Will store the button element
+        let selectedRight = null; // Will store the button element
 
         // --- DOM ELEMENTS ---
         const gameContainer = document.getElementById('game-container');
@@ -633,6 +710,152 @@
         const gameOverModal = document.getElementById('game-over-modal');
         const nextRoundBtn = document.getElementById('next-round-btn');
         const playAgainBtn = document.getElementById('play-again-btn');
+        // New DB Elements
+        const exploreDataBtn = document.getElementById('explore-data-btn');
+        const databaseModal = document.getElementById('database-modal');
+        const closeDbBtn = document.getElementById('close-db-btn');
+        const databaseContainer = document.getElementById('database-container');
+
+        // --- NEW: Database JSON Generation ---
+        const databaseJSON = {};
+
+        function processDatabase() {
+            gameData.forEach(item => {
+                const { left, right, type } = item;
+                
+                if (type === 'State-Zone') {
+                    if (!databaseJSON[left]) databaseJSON[left] = { zones: {} };
+                    if (!databaseJSON[left].zones[right]) databaseJSON[left].zones[right] = { gis: {} };
+                } 
+                else if (type === 'Zone-GI') {
+                    // Find which state this zone belongs to
+                    for (const state in databaseJSON) {
+                        if (databaseJSON[state].zones[left]) {
+                            if (!databaseJSON[state].zones[left].gis[right]) {
+                                databaseJSON[state].zones[left].gis[right] = { features: new Set(), producers: new Set() };
+                            }
+                        }
+                    }
+                } 
+                else if (type === 'GI-Feature' && right !== 'N/A' && right !== 'none') {
+                    for (const state in databaseJSON) {
+                        for (const zone in databaseJSON[state].zones) {
+                            if (databaseJSON[state].zones[zone].gis[left]) {
+                                databaseJSON[state].zones[zone].gis[left].features.add(right);
+                            }
+                        }
+                    }
+                } 
+                else if (type === 'GI-Producer') {
+                    for (const state in databaseJSON) {
+                        for (const zone in databaseJSON[state].zones) {
+                            if (databaseJSON[state].zones[zone].gis[left]) {
+                                databaseJSON[state].zones[zone].gis[left].producers.add(right);
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Special handling for GIs with no features/producers listed
+            for (const state in databaseJSON) {
+                for (const zone in databaseJSON[state].zones) {
+                    for (const gi in databaseJSON[state].zones[zone].gis) {
+                        const giData = databaseJSON[state].zones[zone].gis[gi];
+                        if (giData.features.size === 0) giData.features.add("N/A");
+                        if (giData.producers.size === 0) giData.producers.add("N/A");
+                    }
+                }
+            }
+        }
+
+        // --- NEW: Database HTML Builder ---
+        function buildDatabaseExplorer() {
+            databaseContainer.innerHTML = ''; // Clear old data
+            const states = Object.keys(databaseJSON).sort();
+            
+            states.forEach(state => {
+                const stateData = databaseJSON[state];
+                const stateId = `db-state-${state.replace(/\s/g, '')}`;
+                
+                const stateDiv = document.createElement('div');
+                stateDiv.innerHTML = `<div class="db-item db-state" data-target="${stateId}">${state}</div>`;
+                
+                const zoneContainer = document.createElement('div');
+                zoneContainer.id = stateId;
+                zoneContainer.className = 'db-item-content space-y-2 py-2';
+
+                const zones = Object.keys(stateData.zones).sort();
+                zones.forEach(zone => {
+                    const zoneData = stateData.zones[zone];
+                    const giCount = Object.keys(zoneData.gis).length;
+                    const zoneId = `db-zone-${zone.replace(/\s/g, '')}`;
+
+                    if (giCount > 0) {
+                        const zoneDiv = document.createElement('div');
+                        zoneDiv.innerHTML = `<div class="db-item db-zone" data-target="${zoneId}">${zone}</div>`;
+                        
+                        const giContainer = document.createElement('div');
+                        giContainer.id = zoneId;
+                        giContainer.className = 'db-item-content space-y-2 py-2';
+
+                        const gisInZone = Object.keys(zoneData.gis).sort();
+                        gisInZone.forEach(gi => {
+                            const giData = zoneData.gis[gi];
+                            const giId = `db-gi-${gi.replace(/\s/g, '').replace(/[\(\)]/g, '')}`;
+                            
+                            const giDiv = document.createElement('div');
+                            giDiv.innerHTML = `<div class="db-item db-gi" data-target="${giId}">${gi}</div>`;
+                            
+                            const detailsContainer = document.createElement('div');
+                            detailsContainer.id = giId;
+                            detailsContainer.className = 'db-item-content py-2';
+                            
+                            let detailsHtml = '<div class="db-gi-details">';
+                            
+                            // Add Features
+                            detailsHtml += '<h5>Major Natural Features:</h5><ul>';
+                            Array.from(giData.features).forEach(f => detailsHtml += `<li>${f}</li>`);
+                            detailsHtml += '</ul>';
+                            
+                            // Add Producers
+                            detailsHtml += '<h5>Key Producers:</h5><ul>';
+                            Array.from(giData.producers).forEach(p => detailsHtml += `<li>${p}</li>`);
+                            detailsHtml += '</ul>';
+                            
+                            detailsHtml += '</div>';
+                            detailsContainer.innerHTML = detailsHtml;
+
+                            giDiv.appendChild(detailsContainer);
+                            giContainer.appendChild(giDiv);
+                        });
+                        
+                        zoneDiv.appendChild(giContainer);
+                        zoneContainer.appendChild(zoneDiv);
+                    } else {
+                        // Zone with no GIs (e.g., Western Plains)
+                        zoneContainer.innerHTML += `<div class="db-item-no-click db-zone">${zone} (No GIs)</div>`;
+                    }
+                });
+
+                stateDiv.appendChild(zoneContainer);
+                databaseContainer.appendChild(stateDiv);
+            });
+        }
+
+        // --- NEW: Database Event Listener ---
+        databaseContainer.addEventListener('click', function(e) {
+            const target = e.target.closest('.db-item');
+            if (target) {
+                const contentId = target.dataset.target;
+                if (contentId) {
+                    const content = document.getElementById(contentId);
+                    content.classList.toggle('expanded');
+                    target.classList.toggle('expanded');
+                }
+            }
+        });
+
 
         // --- FUNCTIONS ---
 
@@ -691,7 +914,7 @@
             matchesMade = 0;
             selectedLeft = null;
             selectedRight = null;
-            correctPairs.clear();
+            leftToRightPairs.clear();
             itemAttempts.clear();
             
             currentRoundPairs = gameRounds[currentRound - 1];
@@ -702,8 +925,12 @@
             currentRoundPairs.forEach(pair => {
                 leftItems.push(pair.left);
                 rightItems.push(pair.right);
-                correctPairs.set(pair.left, pair.right);
-                itemAttempts.set(pair.left, 0); // Initialize attempts for this item
+                
+                // Build the flexible matching map
+                if (!leftToRightPairs.has(pair.left)) {
+                    leftToRightPairs.set(pair.left, new Set());
+                }
+                leftToRightPairs.get(pair.left).add(pair.right);
             });
 
             shuffleArray(rightItems); // Shuffle the right column
@@ -718,6 +945,7 @@
         function renderButtons(leftItems, rightItems, pairType) {
             leftContainer.innerHTML = '';
             rightContainer.innerHTML = '';
+            itemAttempts.clear(); // Clear attempts for new buttons
 
             // Set titles and prompt based on round type
             switch (pairType) {
@@ -743,19 +971,25 @@
                     break;
             }
 
-            leftItems.forEach(item => {
+            leftItems.forEach((item, i) => {
                 const button = document.createElement('button');
+                const buttonId = `left-${i}`;
                 button.textContent = item;
+                button.dataset.id = buttonId; // Unique ID for this button
+                button.dataset.value = item;   // The text value
                 button.classList.add('btn-choice', 'w-full', 'text-left', 'p-4', 'rounded-lg', 'font-semibold');
-                button.onclick = () => handleLeftClick(item, button);
+                button.onclick = () => handleLeftClick(button);
                 leftContainer.appendChild(button);
+                itemAttempts.set(buttonId, 0); // Track attempts per button
             });
 
-            rightItems.forEach(item => {
+            rightItems.forEach((item, i) => {
                 const button = document.createElement('button');
                 button.textContent = item;
+                button.dataset.id = `right-${i}`; // Unique ID
+                button.dataset.value = item;    // The text value
                 button.classList.add('btn-choice', 'w-full', 'text-left', 'p-4', 'rounded-lg', 'font-semibold');
-                button.onclick = () => handleRightClick(item, button);
+                button.onclick = () => handleRightClick(button);
                 rightContainer.appendChild(button);
             });
         }
@@ -763,28 +997,28 @@
         /**
          * Handles clicking a button in the left column.
          */
-        function handleLeftClick(value, button) {
+        function handleLeftClick(button) {
             if (button.classList.contains('correct')) return;
 
             // Deselect other left buttons
             Array.from(leftContainer.children).forEach(btn => btn.classList.remove('selected'));
             
             button.classList.add('selected');
-            selectedLeft = { value, button };
+            selectedLeft = button;
             checkMatch();
         }
 
         /**
          * Handles clicking a button in the right column.
          */
-        function handleRightClick(value, button) {
+        function handleRightClick(button) {
             if (button.classList.contains('correct')) return;
 
             // Deselect other right buttons
             Array.from(rightContainer.children).forEach(btn => btn.classList.remove('selected'));
 
             button.classList.add('selected');
-            selectedRight = { value, button };
+            selectedRight = button;
             checkMatch();
         }
 
@@ -796,23 +1030,27 @@
                 return; // Waiting for selections from both columns
             }
 
-            const leftBtn = selectedLeft.button;
-            const rightBtn = selectedRight.button;
-            const leftValue = selectedLeft.value;
+            const leftBtn = selectedLeft;
+            const rightBtn = selectedRight;
+            const leftValue = leftBtn.dataset.value;
+            const rightValue = rightBtn.dataset.value;
+            const leftId = leftBtn.dataset.id;
             
-            // A match attempt is made
-            const currentAttempts = itemAttempts.get(leftValue);
-            const isCorrect = (correctPairs.get(leftValue) === selectedRight.value);
-
             // Reset selections
             selectedLeft = null;
             selectedRight = null;
             leftBtn.classList.remove('selected');
             rightBtn.classList.remove('selected');
 
+            // --- BUG FIX ---
+            // Check if the selected left value has the selected right value in its set of correct answers
+            const isCorrect = leftToRightPairs.get(leftValue)?.has(rightValue);
+
             if (isCorrect) {
                 // --- CORRECT MATCH ---
                 matchesMade++;
+                
+                const currentAttempts = itemAttempts.get(leftId);
                 
                 // Award points
                 if (currentAttempts === 0) {
@@ -834,7 +1072,10 @@
             } else {
                 // --- INCORRECT MATCH ---
                 score = Math.max(0, score - 1); // Decrement score
-                itemAttempts.set(leftValue, currentAttempts + 1); // Increment attempt count for this item
+                
+                // Increment attempt count for this specific left button
+                const currentAttempts = itemAttempts.get(leftId);
+                itemAttempts.set(leftId, currentAttempts + 1); 
 
                 // Shake animation
                 leftBtn.classList.add('incorrect');
@@ -940,6 +1181,17 @@
         
         nextRoundBtn.addEventListener('click', hideSuccessModal);
         playAgainBtn.addEventListener('click', hideGameOver);
+
+        // --- NEW: Database Listeners ---
+        exploreDataBtn.addEventListener('click', () => {
+            processDatabase(); // (Re)process the data
+            buildDatabaseExplorer(); // Build the HTML
+            databaseModal.classList.remove('hidden');
+        });
+
+        closeDbBtn.addEventListener('click', () => {
+            databaseModal.classList.add('hidden');
+        });
 
     </script>
 </body>
