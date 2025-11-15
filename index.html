@@ -15,7 +15,7 @@
             color: #4B3F3F; /* Dark brown text */
         }
         h1, h2, h3, h4, h5 {
-            font-family: 'Playfair Display', serif; /* FIX: Removed '+' */
+            font-family: 'Playfair Display', serif;
         }
         .game-card {
             background-color: #FFFFFF;
@@ -820,29 +820,21 @@
             { left: "Swan District", right: "N/A", type: "GI-Producer" },
         ];
 
-        // --- Create specialized data arrays ---
-        // FIX: Changed from 'const' to 'let' and will populate in a dedicated function
-        let stateZonePairs = [];
-        let zoneGIPairs = [];
-        let giFeaturePairs = [];
-        let giProducerPairs = [];
+        // --- GLOBAL VARIABLES ---
 
-        const positiveMessages = ["Great job!", "Good work.", "What a pro!", "Awesome!", "You're on a roll!", "Magnifique!", "Superb!"];
-        const TOTAL_ROUNDS = 10;
-
-        // --- GAME STATE ---
+        // Game State
         let score = 0;
         let currentRound = 1;
         let currentGameMode = '';
-        let gameRounds = []; // This will be an array of 10 arrays (each inner array has 5 pairs)
-        let currentRoundPairs = []; // The 5 pairs for the current round
-        let leftToRightPairs = new Map(); // Stores all correct matches, e.g. "NSW" -> Set("Hunter", "Big Rivers")
-        let itemAttempts = new Map(); // Tracks attempts per *button*, e.g. "left-0" -> 1
+        let gameRounds = []; 
+        let currentRoundPairs = []; 
+        let leftToRightPairs = new Map(); 
+        let itemAttempts = new Map(); 
         let matchesMade = 0;
-        let selectedLeft = null;  // Will store the button element
-        let selectedRight = null; // Will store the button element
+        let selectedLeft = null;  
+        let selectedRight = null; 
 
-        // --- FLASHCARD STATE ---
+        // Flashcard State
         const flashcardDecks = {
             'State-Zone': [],
             'Zone-GI': [],
@@ -853,6 +845,16 @@
         let currentFilteredDeck = [];
         let currentCardIndex = 0;
         let isCardFlipped = false;
+        
+        // Data Arrays
+        let stateZonePairs = [];
+        let zoneGIPairs = [];
+        let giFeaturePairs = [];
+        let giProducerPairs = [];
+        const databaseJSON = {};
+        
+        const positiveMessages = ["Great job!", "Good work.", "What a pro!", "Awesome!", "You're on a roll!", "Magnifique!", "Superb!"];
+        const TOTAL_ROUNDS = 10;
         
         // --- DOM ELEMENTS ---
         const gameContainer = document.getElementById('game-container');
@@ -894,14 +896,10 @@
         const toggleLearnedBtn = document.getElementById('toggle-learned-btn');
 
 
-        // --- Database JSON Generation ---
-        const databaseJSON = {};
+        // --- DATABASE FUNCTIONS ---
 
         function processDatabase() {
-            // Clear database to prevent duplicates on re-processing
-            for (const key in databaseJSON) {
-                delete databaseJSON[key];
-            }
+            for (const key in databaseJSON) { delete databaseJSON[key]; } // Clear
 
             gameData.forEach(item => {
                 const { left, right, type } = item;
@@ -918,7 +916,6 @@
                         stateName = left.split("-N/A")[0];
                         zoneName = "N/A";
                     } else {
-                        // Find which state this zone belongs to
                         for (const state in databaseJSON) {
                             if (databaseJSON[state].zones[left]) {
                                 stateName = state;
@@ -953,7 +950,6 @@
                 }
             });
 
-            // Special handling for GIs with no features/producers listed
             for (const state in databaseJSON) {
                 for (const zone in databaseJSON[state].zones) {
                     for (const gi in databaseJSON[state].zones[zone].gis) {
@@ -965,18 +961,15 @@
             }
         }
 
-        // --- Database HTML Builder ---
         function buildDatabaseExplorer() {
-            databaseContainer.innerHTML = ''; // Clear old data
+            databaseContainer.innerHTML = ''; 
             const states = Object.keys(databaseJSON).sort();
             
             states.forEach(state => {
                 const stateData = databaseJSON[state];
                 const stateId = `db-state-${state.replace(/[\s\(\)\/'.]/g, '')}`;
-                
                 const stateDiv = document.createElement('div');
                 stateDiv.innerHTML = `<div class="db-item db-state" data-target="${stateId}">${state}</div>`;
-                
                 const zoneContainer = document.createElement('div');
                 zoneContainer.id = stateId;
                 zoneContainer.className = 'db-item-content space-y-2 py-2';
@@ -990,7 +983,6 @@
                     if (giCount > 0) {
                         const zoneDiv = document.createElement('div');
                         zoneDiv.innerHTML = `<div class="db-item db-zone" data-target="${zoneId}">${zone}</div>`;
-                        
                         const giContainer = document.createElement('div');
                         giContainer.id = zoneId;
                         giContainer.className = 'db-item-content space-y-2 py-2';
@@ -999,47 +991,35 @@
                         gisInZone.forEach(gi => {
                             const giData = zoneData.gis[gi];
                             const giId = `db-gi-${state.replace(/[\s\(\)\/'.]/g, '')}-${zone.replace(/[\s\(\)\/'.]/g, '')}-${gi.replace(/[\s\(\)\/'.]/g, '')}`;
-                            
                             const giDiv = document.createElement('div');
                             giDiv.innerHTML = `<div class="db-item db-gi" data-target="${giId}">${gi}</div>`;
-                            
                             const detailsContainer = document.createElement('div');
                             detailsContainer.id = giId;
                             detailsContainer.className = 'db-item-content py-2';
                             
                             let detailsHtml = '<div class="db-gi-details">';
-                            
-                            // Add Features
                             detailsHtml += '<h5>Major Natural Features:</h5><ul>';
                             Array.from(giData.features).sort().forEach(f => detailsHtml += `<li>${f}</li>`);
                             detailsHtml += '</ul>';
-                            
-                            // Add Producers
                             detailsHtml += '<h5>Key Producers:</h5><ul>';
                             Array.from(giData.producers).sort().forEach(p => detailsHtml += `<li>${p}</li>`);
-                            detailsHtml += '</ul>';
-                            
-                            detailsHtml += '</div>';
+                            detailsHtml += '</ul></div>';
                             detailsContainer.innerHTML = detailsHtml;
 
                             giDiv.appendChild(detailsContainer);
                             giContainer.appendChild(giDiv);
                         });
-                        
                         zoneDiv.appendChild(giContainer);
                         zoneContainer.appendChild(zoneDiv);
                     } else {
-                        // Zone with no GIs (e.g., Western Plains)
                         zoneContainer.innerHTML += `<div class="db-item-no-click db-zone">${zone} (No GIs)</div>`;
                     }
                 });
-
                 stateDiv.appendChild(zoneContainer);
                 databaseContainer.appendChild(stateDiv);
             });
         }
 
-        // --- Database Event Listener ---
         databaseContainer.addEventListener('click', function(e) {
             const target = e.target.closest('.db-item');
             if (target) {
@@ -1055,28 +1035,18 @@
 
         // --- GAME FUNCTIONS ---
 
-        /**
-         * Sets up the 10 rounds for the selected game mode
-         */
         function buildGameRounds() {
             gameRounds = [];
             let sourcePairs = [];
 
-            if (currentGameMode === 'State-Zone') {
-                sourcePairs = [...stateZonePairs];
-            } else if (currentGameMode === 'Zone-GI') {
-                sourcePairs = [...zoneGIPairs];
-            } else if (currentGameMode === 'GI-Feature') {
-                sourcePairs = [...giFeaturePairs];
-            } else if (currentGameMode === 'GI-Producer') {
-                sourcePairs = [...giProducerPairs];
-            }
+            if (currentGameMode === 'State-Zone') sourcePairs = [...stateZonePairs];
+            else if (currentGameMode === 'Zone-GI') sourcePairs = [...zoneGIPairs];
+            else if (currentGameMode === 'GI-Feature') sourcePairs = [...giFeaturePairs];
+            else if (currentGameMode === 'GI-Producer') sourcePairs = [...giProducerPairs];
 
             shuffleArray(sourcePairs);
             
-            // Build 10 rounds, 5 pairs each
             for (let i = 0; i < TOTAL_ROUNDS; i++) {
-                // Ensure we have enough pairs, looping if necessary
                 let roundPairs = [];
                 for (let j = 0; j < 5; j++) {
                     roundPairs.push(sourcePairs[(i * 5 + j) % sourcePairs.length]);
@@ -1085,26 +1055,19 @@
             }
         }
 
-        /**
-         * Initializes the game.
-         */
         function initGame() {
             score = 0;
             currentRound = 1;
-            buildGameRounds(); // Build the 10 rounds for the current mode
+            buildGameRounds(); 
             startRound();
         }
         
-        /**
-         * Starts a new round.
-         */
         function startRound() {
             if (currentRound > TOTAL_ROUNDS) {
                 showGameOver();
                 return;
             }
 
-            // Reset round state
             matchesMade = 0;
             selectedLeft = null;
             selectedRight = null;
@@ -1113,12 +1076,10 @@
             
             currentRoundPairs = gameRounds[currentRound - 1];
             
-            // FIX: Check for undefined pairs, which happens if source arrays are empty
             if (!currentRoundPairs || currentRoundPairs.length === 0 || !currentRoundPairs[0]) {
-                console.error("Error: No round data found. Source arrays might be empty.");
-                // Show an error or gracefully exit
+                console.error("Error: No round data found.");
                 showMainMenu();
-                alert("Error: Could not load game data.");
+                alert("Error: Could not load game data. Data arrays are empty.");
                 return;
             }
 
@@ -1129,28 +1090,21 @@
             currentRoundPairs.forEach(pair => {
                 leftItems.push(pair.left);
                 rightItems.push(pair.right);
-                
-                // Build the flexible matching map
                 if (!leftToRightPairs.has(pair.left)) {
                     leftToRightPairs.set(pair.left, new Set());
                 }
                 leftToRightPairs.get(pair.left).add(pair.right);
             });
 
-            shuffleArray(rightItems); // Shuffle the right column
-
+            shuffleArray(rightItems); 
             updateScoreboard();
             renderButtons(leftItems, rightItems, pairType);
         }
 
-        /**
-         * Renders the choice buttons for the current round.
-         */
         function renderButtons(leftItems, rightItems, pairType) {
-            gameRowsContainer.innerHTML = ''; // Clear old rows
-            itemAttempts.clear(); // Clear attempts for new buttons
+            gameRowsContainer.innerHTML = ''; 
+            itemAttempts.clear(); 
 
-            // Set titles and prompt based on round type
             switch (pairType) {
                 case 'State-Zone':
                     leftTitle.textContent = "State";
@@ -1174,31 +1128,26 @@
                     break;
             }
 
-            // Create 5 parallel rows
             for(let i = 0; i < 5; i++) {
                 const row = document.createElement('div');
                 row.className = 'grid grid-cols-2 gap-4 md:gap-8';
-
                 const leftItem = leftItems[i];
                 const rightItem = rightItems[i];
 
-                // Left Button
                 const leftButton = document.createElement('button');
                 const leftButtonId = `left-${i}`;
                 leftButton.textContent = leftItem.includes("-N/A") ? "N/A" : leftItem;
-                leftButton.dataset.id = leftButtonId; // Unique ID for this button
-                leftButton.dataset.value = leftItem;   // The true value (e.g., "Queensland-N/A")
+                leftButton.dataset.id = leftButtonId; 
+                leftButton.dataset.value = leftItem;
                 leftButton.classList.add('btn-choice', 'p-4', 'rounded-lg', 'font-semibold');
                 leftButton.onclick = () => handleLeftClick(leftButton);
-                
-                itemAttempts.set(leftButtonId, 0); // Track attempts per button
+                itemAttempts.set(leftButtonId, 0); 
 
-                // Right Button
                 const rightButton = document.createElement('button');
                 const rightButtonId = `right-${i}`;
                 rightButton.textContent = rightItem;
-                rightButton.dataset.id = rightButtonId; // Unique ID
-                rightButton.dataset.value = rightItem;    // The text value
+                rightButton.dataset.id = rightButtonId;
+                rightButton.dataset.value = rightItem;
                 rightButton.classList.add('btn-choice', 'p-4', 'rounded-lg', 'font-semibold');
                 rightButton.onclick = () => handleRightClick(rightButton);
 
@@ -1208,38 +1157,25 @@
             }
         }
         
-        /**
-         * Handles clicking a button in the left column.
-         */
         function handleLeftClick(button) {
             if (button.classList.contains('correct')) return;
-            // Deselect other left buttons
             document.querySelectorAll('#game-rows-container .btn-choice[data-id^="left-"]').forEach(btn => btn.classList.remove('selected'));
-            
             button.classList.add('selected');
             selectedLeft = button;
             checkMatch();
         }
 
-        /**
-         * Handles clicking a button in the right column.
-         */
         function handleRightClick(button) {
             if (button.classList.contains('correct')) return;
-            // Deselect other right buttons
             document.querySelectorAll('#game-rows-container .btn-choice[data-id^="right-"]').forEach(btn => btn.classList.remove('selected'));
-
             button.classList.add('selected');
             selectedRight = button;
             checkMatch();
         }
 
-        /**
-         * Checks if a match has been made and processes it.
-         */
         function checkMatch() {
             if (!selectedLeft || !selectedRight) {
-                return; // Waiting for selections from both columns
+                return; 
             }
 
             const leftBtn = selectedLeft;
@@ -1248,7 +1184,6 @@
             const rightValue = rightBtn.dataset.value;
             const leftId = leftBtn.dataset.id;
             
-            // Reset selections
             selectedLeft = null;
             selectedRight = null;
             leftBtn.classList.remove('selected');
@@ -1257,15 +1192,10 @@
             const isCorrect = leftToRightPairs.get(leftValue)?.has(rightValue);
 
             if (isCorrect) {
-                // --- CORRECT MATCH ---
                 matchesMade++;
                 const currentAttempts = itemAttempts.get(leftId);
-                
-                if (currentAttempts === 0) {
-                    score += 2; // +2 for first-try match
-                } else {
-                    score += 1; // +1 for subsequent match
-                }
+                if (currentAttempts === 0) score += 2;
+                else score += 1; 
 
                 leftBtn.classList.add('correct');
                 rightBtn.classList.add('correct');
@@ -1276,8 +1206,7 @@
                     setTimeout(showSuccessModal, 500);
                 }
             } else {
-                // --- INCORRECT MATCH ---
-                score = Math.max(0, score - 1); // Decrement score
+                score = Math.max(0, score - 1); 
                 const currentAttempts = itemAttempts.get(leftId);
                 itemAttempts.set(leftId, currentAttempts + 1); 
 
@@ -1297,10 +1226,8 @@
         }
         
         function showSuccessModal() {
-            const modalMessage = document.getElementById('modal-message');
-            const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
-            modalMessage.textContent = randomMessage;
-            
+            const modalMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
+            successModal.querySelector('#modal-message').textContent = modalMessage;
             successModal.classList.remove('hidden');
             setTimeout(() => {
                 successModal.firstElementChild.classList.remove('scale-95', 'opacity-0');
@@ -1317,14 +1244,8 @@
         }
 
         function showGameOver() {
-            const finalScoreEl = document.getElementById('final-score');
-            const finalPercentageEl = document.getElementById('final-percentage');
-            const finalMessageEl = document.getElementById('final-score-message');
-
-            // Max score is 2 points * 5 pairs * 10 rounds
             const maxScore = TOTAL_ROUNDS * 5 * 2;
             const percentage = Math.round(Math.max(0, (score / maxScore) * 100));
-
             let message = '';
             if (percentage === 100) message = "Perfect Score!";
             else if (percentage >= 90) message = "You're a Master!";
@@ -1333,9 +1254,9 @@
             else if (percentage >= 50) message = "Nicely done!";
             else message = "Keep practicing!";
 
-            finalScoreEl.textContent = score;
-            finalPercentageEl.textContent = `${percentage}%`;
-            finalMessageEl.textContent = message;
+            gameOverModal.querySelector('#final-score').textContent = score;
+            gameOverModal.querySelector('#final-percentage').textContent = `${percentage}%`;
+            gameOverModal.querySelector('#final-score-message').textContent = message;
             
             gameOverModal.classList.remove('hidden');
             setTimeout(() => {
@@ -1353,10 +1274,10 @@
 
         // --- FLASHCARD FUNCTIONS ---
         
-        // FIX: Re-written to use the pre-filtered global arrays
         function buildFlashcardDecks() {
             Object.keys(flashcardDecks).forEach(key => flashcardDecks[key] = []); // Clear
             const uniquePairs = new Map();
+            const cleanId = (str) => str.replace(/[\s\(\)\/'.]/g, ''); // Helper to clean IDs
 
             // State-Zone Deck: "What State is [ZONE] in?" -> [STATE]
             uniquePairs.set('State-Zone', new Map());
@@ -1368,7 +1289,7 @@
                     prompt: `What State is this Zone in?`,
                     front: zone,
                     back: state,
-                    id: `sz-${zone.replace(/[\s\(\)\/'.]/g, '')}`,
+                    id: `sz-${cleanId(zone)}`,
                     learned: false
                 });
             });
@@ -1384,7 +1305,7 @@
                     prompt: `What Zone is this GI in?`,
                     front: gi,
                     back: zone,
-                    id: `zg-${gi.replace(/[\s\(\)\/'.]/g, '')}`,
+                    id: `zg-${cleanId(gi)}`,
                     learned: false
                 });
             });
@@ -1402,7 +1323,7 @@
                     prompt: `What GI has this feature?`,
                     front: feature,
                     back: Array.from(gis).join(' / '),
-                    id: `gf-${feature.replace(/[\s\(\)\/'.]/g, '')}`,
+                    id: `gf-${cleanId(feature)}`,
                     learned: false
                 });
             });
@@ -1420,24 +1341,22 @@
                     prompt: `What GI is this producer in?`,
                     front: producer,
                     back: Array.from(gis).join(' / '),
-                    id: `gp-${producer.replace(/[\s\(\)\/'.]/g, '')}`, // FIX: Sanitize ID
+                    id: `gp-${cleanId(producer)}`,
                     learned: false
                 });
             });
         }
 
         function initFlashcards(mode) {
-            currentGameMode = mode; // e.g., 'State-Zone'
+            currentGameMode = mode; 
             currentFlashcardDeck = flashcardDecks[mode];
             shuffleArray(currentFlashcardDeck);
 
-            // Set title
             if (mode === 'State-Zone') flashcardDeckTitle.textContent = 'State / Zone Deck';
             if (mode === 'Zone-GI') flashcardDeckTitle.textContent = 'Zone / GI Deck';
             if (mode === 'GI-Feature') flashcardDeckTitle.textContent = 'GI / Feature Deck';
             if (mode === 'GI-Producer') flashcardDeckTitle.textContent = 'GI / Producer Deck';
 
-            // Reset study mode filter
             document.querySelector('.study-mode-radio[value="all"]').checked = true;
             buildFilteredDeck();
             showCard(0);
@@ -1488,11 +1407,9 @@
             
             flashcardStatus.textContent = `Card ${index + 1} of ${currentFilteredDeck.length}`;
 
-            // Update nav buttons
             prevCardBtn.disabled = (index === 0);
             nextCardBtn.disabled = (index === currentFilteredDeck.length - 1);
             
-            // Update learned button
             if (card.learned) {
                 toggleLearnedBtn.textContent = 'Mark as Unlearned';
                 toggleLearnedBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'border-green-700');
@@ -1524,14 +1441,13 @@
         }
 
         function toggleLearned() {
+            if (currentFilteredDeck.length === 0) return; 
             const card = currentFilteredDeck[currentCardIndex];
-            if (!card) return; // No card to toggle
+            if (!card) return; 
 
-            // Find this card in the *main* deck and update it
             const mainDeckCard = currentFlashcardDeck.find(c => c.id === card.id);
             mainDeckCard.learned = !mainDeckCard.learned;
             
-            // Update the button text immediately
             if (mainDeckCard.learned) {
                 toggleLearnedBtn.textContent = 'Mark as Unlearned';
                 toggleLearnedBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'border-green-700');
@@ -1541,14 +1457,21 @@
                 toggleLearnedBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600', 'border-gray-600');
                 toggleLearnedBtn.classList.add('bg-green-600', 'hover:bg-green-700', 'border-green-700');
             }
-
-            // Re-filter the deck *after* a short delay so the user doesn't
-            // see an abrupt change if the card disappears from the filtered deck
+            
             setTimeout(() => {
                 const oldIndex = currentCardIndex;
+                const oldId = currentFilteredDeck[oldIndex].id;
                 buildFilteredDeck();
-                // Try to stay on the "same" card
-                if (currentFilteredDeck.length > 0) {
+                
+                // Try to find the card in the new deck
+                const newIndex = currentFilteredDeck.findIndex(c => c.id === oldId);
+
+                if (newIndex !== -1) {
+                    // Card is still in this filtered deck, stay on it
+                    showCard(newIndex);
+                } else {
+                    // Card was removed (e.g., marked learned in "Unlearned" mode)
+                    // Show the next logical card
                     showCard(Math.min(oldIndex, currentFilteredDeck.length - 1));
                 }
             }, 200);
@@ -1567,8 +1490,18 @@
             startModal.classList.remove('hidden');
         }
 
+        // --- GLOBAL INITIALIZATION ---
+        
+        // 1. Populate filtered arrays for the matching game
+        stateZonePairs = gameData.filter(q => q.type === 'State-Zone');
+        zoneGIPairs = gameData.filter(q => q.type === 'Zone-GI');
+        giFeaturePairs = gameData.filter(q => q.type === 'GI-Feature' && q.right !== 'N/A' && q.right !== 'none');
+        giProducerPairs = gameData.filter(q => q.type === 'GI-Producer' && q.right !== 'N/A');
+        
+        // 2. Build the flashcard decks from these new arrays
+        buildFlashcardDecks();
 
-        // --- EVENT LISTENERS ---
+        // 3. Set up event listeners
         startGameBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 currentGameMode = btn.dataset.mode;
@@ -1582,10 +1515,9 @@
         playAgainBtn.addEventListener('click', hideGameOver);
         gameMainMenuBtn.addEventListener('click', showMainMenu);
 
-        // --- Database Listeners ---
         exploreDataBtn.addEventListener('click', () => {
-            processDatabase(); // (Re)process the data
-            buildDatabaseExplorer(); // Build the HTML
+            processDatabase(); 
+            buildDatabaseExplorer(); 
             databaseModal.classList.remove('hidden');
         });
 
@@ -1593,7 +1525,6 @@
             databaseModal.classList.add('hidden');
         });
 
-        // --- Flashcard Listeners ---
         flashcardsBtn.addEventListener('click', () => {
             startModal.classList.add('hidden');
             flashcardMenuModal.classList.remove('hidden');
@@ -1617,23 +1548,6 @@
         resetDeckBtn.addEventListener('click', resetDeck);
         studyModeRadios.forEach(radio => radio.addEventListener('change', buildFilteredDeck));
         flashcardMainMenuBtn.addEventListener('click', showMainMenu);
-
-
-        // --- Initial App Setup ---
-        // FIX: Centralize all data initialization
-        function initializeData() {
-            // 1. Populate filtered arrays for the matching game
-            stateZonePairs = gameData.filter(q => q.type === 'State-Zone');
-            zoneGIPairs = gameData.filter(q => q.type === 'Zone-GI');
-            giFeaturePairs = gameData.filter(q => q.type === 'GI-Feature' && q.right !== 'N/A' && q.right !== 'none');
-            giProducerPairs = gameData.filter(q => q.type === 'GI-Producer' && q.right !== 'N/A');
-            
-            // 2. Build the flashcard decks from these new arrays
-            buildFlashcardDecks();
-        }
-
-        // Run the initialization function once the script loads
-        initializeData();
 
     </script>
 </body>
