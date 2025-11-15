@@ -26,10 +26,18 @@
             transition: all 0.2s ease-in-out;
             border: 2px solid #DED1C1;
             background-color: #fff;
+            min-height: 60px; /* Ensure buttons have a good clickable height */
+            display: flex;
+            align-items: center;
         }
         .btn-choice:hover:not(:disabled) {
             background-color: #FDF8F2;
             transform: translateY(-2px);
+        }
+        .btn-choice.selected {
+            background-color: #E0E7FF; /* Light blue for selected */
+            border-color: #A5B4FC;
+            box-shadow: 0 0 0 3px #A5B4FC;
         }
         .btn-choice:disabled {
             opacity: 0.7;
@@ -40,6 +48,7 @@
             border-color: #6EE7B7;
             color: #065F46;
             cursor: not-allowed;
+            opacity: 1;
         }
         .btn-choice.incorrect {
             animation: shake 0.5s;
@@ -64,16 +73,16 @@
             <h2 class="text-4xl font-bold mb-4 text-red-900">Welcome!</h2>
             <p class="text-lg mb-6 text-left text-gray-700">Test your knowledge of Australian Wine Laws.</p>
             <div class="text-left space-y-3 mb-8 bg-red-800/5 p-4 rounded-lg border border-red-800/10">
-                <p><strong class="text-red-800">GOAL:</strong> Correctly match the geographical items across 20 rounds.</p>
+                <p><strong class="text-red-800">GOAL:</strong> In each round, match all 5 items from the left column to their correct counterparts on the right.</p>
                 <ul class="list-disc list-inside pl-4 text-gray-600">
-                    <li>Rounds 1-5: Match the <strong>State</strong> to its <strong>Zone</strong>.</li>
-                    <li>Rounds 6-10: Match the <strong>Zone</strong> to its <strong>GI</strong>.</li>
-                    <li>Rounds 11-15: Match the <strong>GI</strong> to its <strong>Natural Feature</strong>.</li>
-                    <li>Rounds 16-20: Match the <strong>GI</strong> to its <strong>Key Producer</strong>.</li>
+                    <li>Rounds 1-5: Match <strong>State</strong> to <strong>Zone</strong>.</li>
+                    <li>Rounds 6-10: Match <strong>Zone</strong> to <strong>GI</strong>.</li>
+                    <li>Rounds 11-15: Match <strong>GI</strong> to <strong>Natural Feature</strong>.</li>
+                    <li>Rounds 16-20: Match <strong>GI</strong> to <strong>Key Producer</strong>.</li>
                 </ul>
                 <p><strong class="text-red-800">SCORING:</strong></p>
                 <ul class="list-disc list-inside pl-4 text-gray-600">
-                    <li><span class="font-bold text-green-700">+2 points</span> for a correct match on the first try.</li>
+                    <li><span class="font-bold text-green-700">+2 points</span> for a correct match on the first try (for that pair).</li>
                     <li><span class="font-bold text-green-700">+1 point</span> for a correct match on subsequent tries.</li>
                     <li><span class="font-bold text-red-700">-1 point</span> for an incorrect match (min. score is 0).</li>
                 </ul>
@@ -82,7 +91,7 @@
         </div>
     </div>
 
-    <div id="game-container" class="w-full max-w-2xl mx-auto hidden">
+    <div id="game-container" class="w-full max-w-4xl mx-auto hidden">
         <div class="text-center mb-6">
             <h1 class="text-4xl md:text-5xl font-bold text-red-900">Australia Wine Master</h1>
             <p class="text-lg text-gray-600 mt-2">Geographical Indication Challenge</p>
@@ -94,21 +103,28 @@
                 <p id="round-info" class="text-2xl font-semibold">1 / 20</p>
             </div>
             <div class="text-center">
+                <h3 id="round-prompt" class="text-xl font-bold">Match the items</h3>
+                <p class="text-lg">Select one item from each column to make a match.</p>
+            </div>
+            <div class="text-center">
                 <h3 class="text-xl font-bold">Score</h3>
                 <p id="score-info" class="text-2xl font-semibold">0</p>
             </div>
         </div>
 
         <div class="game-card rounded-lg p-6 md:p-8">
-            <div class="text-center mb-6">
-                <p id="match-prompt" class="text-lg mb-2">Match the State:</p>
-                <h2 id="item-to-match" class="text-3xl md:text-4xl font-bold">Item Name</h2>
-            </div>
+            <div class="grid grid-cols-2 gap-4 md:gap-8">
+                <div>
+                    <h3 id="left-title" class="text-2xl font-bold text-center mb-4">Left Column</h3>
+                    <div id="left-container" class="flex flex-col space-y-3">
+                        </div>
+                </div>
 
-            <div>
-                <h3 id="choices-title" class="text-2xl font-bold text-center mb-4">Choices</h3>
-                <div id="choices-container" class="flex flex-col space-y-3">
-                    </div>
+                <div>
+                    <h3 id="right-title" class="text-2xl font-bold text-center mb-4">Right Column</h3>
+                    <div id="right-container" class="flex flex-col space-y-3">
+                        </div>
+                </div>
             </div>
         </div>
     </div>
@@ -433,7 +449,7 @@
             { left: "Upper Goulburn", right: "Lake Eildon", type: "GI-Feature" },
             { left: "Upper Goulburn", right: "Great Dividing Range", type: "GI-Feature" },
             { left: "Upper Goulburn", right: "Delatite", type: "GI-Producer" },
-            { left: "Gippsland", right: "Gippsland", type: "Zone-GI" },
+            { left: "Gippsland", right: "Gippsland", type: "Zone-GI" }, // This is a Zone that is also a GI
             { left: "Gippsland", right: "Bass Strait/Southern Ocean", type: "GI-Feature" },
             { left: "Gippsland", right: "Great Dividing Range", type: "GI-Feature" },
             { left: "Gippsland", right: "Bass Phillip", type: "GI-Producer" },
@@ -583,15 +599,10 @@
         ];
 
         // --- Create specialized data arrays ---
-        const stateZoneQuestions = gameData.filter(q => q.type === 'State-Zone');
-        const zoneGIQuestions = gameData.filter(q => q.type === 'Zone-GI');
-        const giFeatureQuestions = gameData.filter(q => q.type === 'GI-Feature' && q.right !== 'N/A' && q.right !== 'none');
-        const giProducerQuestions = gameData.filter(q => q.type === 'GI-Producer');
-
-        const allZones = [...new Set(stateZoneQuestions.map(q => q.right))];
-        const allGIs = [...new Set(zoneGIQuestions.map(q => q.right))];
-        const allFeatures = [...new Set(giFeatureQuestions.map(q => q.right))];
-        const allProducers = [...new Set(giProducerQuestions.map(q => q.right))];
+        const stateZonePairs = gameData.filter(q => q.type === 'State-Zone');
+        const zoneGIPairs = gameData.filter(q => q.type === 'Zone-GI');
+        const giFeaturePairs = gameData.filter(q => q.type === 'GI-Feature' && q.right !== 'N/A' && q.right !== 'none');
+        const giProducerPairs = gameData.filter(q => q.type === 'GI-Producer');
 
         const positiveMessages = ["Great job!", "Good work.", "What a pro!", "Awesome!", "You're on a roll!", "Magnifique!", "Superb!"];
         const TOTAL_ROUNDS = 20;
@@ -599,9 +610,13 @@
         // --- GAME STATE ---
         let score = 0;
         let currentRound = 1;
-        let gameQuestions = [];
-        let currentQuestion = {};
-        let attempts = 0;
+        let gameRounds = []; // This will be an array of 20 arrays (each inner array has 5 pairs)
+        let currentRoundPairs = []; // The 5 pairs for the current round
+        let correctPairs = new Map();
+        let itemAttempts = new Map();
+        let matchesMade = 0;
+        let selectedLeft = null;
+        let selectedRight = null;
 
         // --- DOM ELEMENTS ---
         const gameContainer = document.getElementById('game-container');
@@ -609,10 +624,11 @@
         const startGameBtn = document.getElementById('start-game-btn');
         const scoreInfo = document.getElementById('score-info');
         const roundInfo = document.getElementById('round-info');
-        const matchPrompt = document.getElementById('match-prompt');
-        const itemToMatch = document.getElementById('item-to-match');
-        const choicesTitle = document.getElementById('choices-title');
-        const choicesContainer = document.getElementById('choices-container');
+        const roundPrompt = document.getElementById('round-prompt');
+        const leftTitle = document.getElementById('left-title');
+        const rightTitle = document.getElementById('right-title');
+        const leftContainer = document.getElementById('left-container');
+        const rightContainer = document.getElementById('right-container');
         const successModal = document.getElementById('success-modal');
         const gameOverModal = document.getElementById('game-over-modal');
         const nextRoundBtn = document.getElementById('next-round-btn');
@@ -637,20 +653,27 @@
         function initGame() {
             score = 0;
             currentRound = 1;
+            gameRounds = [];
 
-            // Shuffle each question type
-            shuffleArray(stateZoneQuestions);
-            shuffleArray(zoneGIQuestions);
-            shuffleArray(giFeatureQuestions);
-            shuffleArray(giProducerQuestions);
+            // Shuffle each pair type
+            shuffleArray(stateZonePairs);
+            shuffleArray(zoneGIPairs);
+            shuffleArray(giFeaturePairs);
+            shuffleArray(giProducerPairs);
 
-            // Build the 20-round game
-            gameQuestions = [
-                ...stateZoneQuestions.slice(0, 5),
-                ...zoneGIQuestions.slice(0, 5),
-                ...giFeatureQuestions.slice(0, 5),
-                ...giProducerQuestions.slice(0, 5)
-            ];
+            // Build the 20 rounds, 5 rounds for each type
+            for (let i = 0; i < 5; i++) {
+                gameRounds.push(stateZonePairs.slice(i * 5, (i + 1) * 5));
+            }
+            for (let i = 0; i < 5; i++) {
+                gameRounds.push(zoneGIPairs.slice(i * 5, (i + 1) * 5));
+            }
+            for (let i = 0; i < 5; i++) {
+                gameRounds.push(giFeaturePairs.slice(i * 5, (i + 1) * 5));
+            }
+            for (let i = 0; i < 5; i++) {
+                gameRounds.push(giProducerPairs.slice(i * 5, (i + 1) * 5));
+            }
             
             startRound();
         }
@@ -665,102 +688,166 @@
             }
 
             // Reset round state
-            attempts = 0;
-            currentQuestion = gameQuestions[currentRound - 1];
+            matchesMade = 0;
+            selectedLeft = null;
+            selectedRight = null;
+            correctPairs.clear();
+            itemAttempts.clear();
+            
+            currentRoundPairs = gameRounds[currentRound - 1];
+            const leftItems = [];
+            const rightItems = [];
+            const pairType = currentRoundPairs[0].type;
 
-            itemToMatch.textContent = currentQuestion.left;
+            currentRoundPairs.forEach(pair => {
+                leftItems.push(pair.left);
+                rightItems.push(pair.right);
+                correctPairs.set(pair.left, pair.right);
+                itemAttempts.set(pair.left, 0); // Initialize attempts for this item
+            });
+
+            shuffleArray(rightItems); // Shuffle the right column
+
             updateScoreboard();
-            renderButtons();
+            renderButtons(leftItems, rightItems, pairType);
         }
 
         /**
          * Renders the choice buttons for the current round.
          */
-        function renderButtons() {
-            choicesContainer.innerHTML = '';
-            const correctAnswer = currentQuestion.right;
-            const type = currentQuestion.type;
-            let distractorPool = [];
-            
-            // Set titles and distractor pool based on round type
-            switch (type) {
+        function renderButtons(leftItems, rightItems, pairType) {
+            leftContainer.innerHTML = '';
+            rightContainer.innerHTML = '';
+
+            // Set titles and prompt based on round type
+            switch (pairType) {
                 case 'State-Zone':
-                    matchPrompt.textContent = "Match the State:";
-                    choicesTitle.textContent = "Zone";
-                    distractorPool = allZones;
+                    leftTitle.textContent = "State";
+                    rightTitle.textContent = "Zone";
+                    roundPrompt.textContent = "Match the State to its Zone";
                     break;
                 case 'Zone-GI':
-                    matchPrompt.textContent = "Match the Zone:";
-                    choicesTitle.textContent = "Geographical Indication (GI)";
-                    distractorPool = allGIs;
+                    leftTitle.textContent = "Zone";
+                    rightTitle.textContent = "Geographical Indication (GI)";
+                    roundPrompt.textContent = "Match the Zone to its GI";
                     break;
                 case 'GI-Feature':
-                    matchPrompt.textContent = "Match the GI:";
-                    choicesTitle.textContent = "Major Natural Feature";
-                    distractorPool = allFeatures;
+                    leftTitle.textContent = "Geographical Indication (GI)";
+                    rightTitle.textContent = "Major Natural Feature";
+                    roundPrompt.textContent = "Match the GI to its Feature";
                     break;
                 case 'GI-Producer':
-                    matchPrompt.textContent = "Match the GI:";
-                    choicesTitle.textContent = "Key Producer";
-                    distractorPool = allProducers;
+                    leftTitle.textContent = "Geographical Indication (GI)";
+                    rightTitle.textContent = "Key Producer";
+                    roundPrompt.textContent = "Match the GI to its Producer";
                     break;
             }
 
-            // Get 4 incorrect answers
-            const incorrectAnswers = distractorPool.filter(item => item !== correctAnswer);
-            shuffleArray(incorrectAnswers);
-            
-            const choices = [correctAnswer, ...incorrectAnswers.slice(0, 4)];
-            shuffleArray(choices); // Shuffle the final 5 choices
-
-            choices.forEach(choice => {
+            leftItems.forEach(item => {
                 const button = document.createElement('button');
-                button.textContent = choice;
+                button.textContent = item;
                 button.classList.add('btn-choice', 'w-full', 'text-left', 'p-4', 'rounded-lg', 'font-semibold');
-                button.onclick = () => handleSelection(choice, button);
-                choicesContainer.appendChild(button);
+                button.onclick = () => handleLeftClick(item, button);
+                leftContainer.appendChild(button);
+            });
+
+            rightItems.forEach(item => {
+                const button = document.createElement('button');
+                button.textContent = item;
+                button.classList.add('btn-choice', 'w-full', 'text-left', 'p-4', 'rounded-lg', 'font-semibold');
+                button.onclick = () => handleRightClick(item, button);
+                rightContainer.appendChild(button);
             });
         }
         
         /**
-         * Handles the player's selection.
-         * @param {string} value - The selected value.
-         * @param {HTMLElement} button - The button element that was clicked.
+         * Handles clicking a button in the left column.
          */
-        function handleSelection(value, button) {
-            attempts++;
-            const isCorrect = (value === currentQuestion.right);
+        function handleLeftClick(value, button) {
+            if (button.classList.contains('correct')) return;
+
+            // Deselect other left buttons
+            Array.from(leftContainer.children).forEach(btn => btn.classList.remove('selected'));
+            
+            button.classList.add('selected');
+            selectedLeft = { value, button };
+            checkMatch();
+        }
+
+        /**
+         * Handles clicking a button in the right column.
+         */
+        function handleRightClick(value, button) {
+            if (button.classList.contains('correct')) return;
+
+            // Deselect other right buttons
+            Array.from(rightContainer.children).forEach(btn => btn.classList.remove('selected'));
+
+            button.classList.add('selected');
+            selectedRight = { value, button };
+            checkMatch();
+        }
+
+        /**
+         * Checks if a match has been made and processes it.
+         */
+        function checkMatch() {
+            if (!selectedLeft || !selectedRight) {
+                return; // Waiting for selections from both columns
+            }
+
+            const leftBtn = selectedLeft.button;
+            const rightBtn = selectedRight.button;
+            const leftValue = selectedLeft.value;
+            
+            // A match attempt is made
+            const currentAttempts = itemAttempts.get(leftValue);
+            const isCorrect = (correctPairs.get(leftValue) === selectedRight.value);
+
+            // Reset selections
+            selectedLeft = null;
+            selectedRight = null;
+            leftBtn.classList.remove('selected');
+            rightBtn.classList.remove('selected');
 
             if (isCorrect) {
+                // --- CORRECT MATCH ---
+                matchesMade++;
+                
                 // Award points
-                if (attempts === 1) {
-                    score += 2; // 2 points for a correct answer on the first try
+                if (currentAttempts === 0) {
+                    score += 2; // +2 for first-try match
                 } else {
-                    score += 1; // 1 point for a correct answer on subsequent tries
+                    score += 1; // +1 for subsequent match
                 }
 
-                button.classList.add('correct');
-                // Disable all buttons
-                Array.from(choicesContainer.children).forEach(btn => {
-                    btn.disabled = true;
-                });
+                // Style and disable correct pair
+                leftBtn.classList.add('correct');
+                rightBtn.classList.add('correct');
+                leftBtn.disabled = true;
+                rightBtn.disabled = true;
 
-                setTimeout(showSuccessModal, 500);
-
+                // Check if round is over
+                if (matchesMade === 5) {
+                    setTimeout(showSuccessModal, 500);
+                }
             } else {
-                // Decrement score but not below zero
-                score = Math.max(0, score - 1);
-                button.classList.add('incorrect');
-                button.disabled = true; // Disable incorrect guess
-                
-                // Remove incorrect class after animation
+                // --- INCORRECT MATCH ---
+                score = Math.max(0, score - 1); // Decrement score
+                itemAttempts.set(leftValue, currentAttempts + 1); // Increment attempt count for this item
+
+                // Shake animation
+                leftBtn.classList.add('incorrect');
+                rightBtn.classList.add('incorrect');
                 setTimeout(() => {
-                    button.classList.remove('incorrect');
+                    leftBtn.classList.remove('incorrect');
+                    rightBtn.classList.remove('incorrect');
                 }, 500);
             }
 
             updateScoreboard();
         }
+
 
         /**
          * Updates the score and round display.
@@ -804,8 +891,8 @@
             const finalPercentageEl = document.getElementById('final-percentage');
             const finalMessageEl = document.getElementById('final-score-message');
 
-            // Max score is 2 points per round on first try
-            const maxScore = TOTAL_ROUNDS * 2;
+            // Max score is 2 points * 5 pairs * 20 rounds
+            const maxScore = TOTAL_ROUNDS * 5 * 2;
             const percentage = Math.round(Math.max(0, (score / maxScore) * 100));
 
             let message = '';
