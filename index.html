@@ -1410,18 +1410,46 @@
             // --- Zone-GI Deck (NEW LOGIC) ---
             uniquePairs.set('Zone-GI', new Map());
             zoneGIPairs.forEach(p => {
-                let zone = p.left.includes("-N/A") ? "N/A" : p.left;
-                if (!uniquePairs.get('Zone-GI').has(p.right)) {
-                    uniquePairs.get('Zone-GI').set(p.right, new Set()); // Use a Set to store multiple zones
+                let gi = p.right;
+                let zone;
+                let state = null; // <-- NEW
+                if (p.left.includes("-N/A")) {
+                    zone = "N/A";
+                    state = p.left.split("-N/A")[0]; // <-- Capture the state
+                } else {
+                    zone = p.left;
                 }
-                uniquePairs.get('Zone-GI').get(p.right).add(zone); // Add zone to the Set
+
+                if (!uniquePairs.get('Zone-GI').has(gi)) {
+                    uniquePairs.get('Zone-GI').set(gi, { zones: new Set(), stateForNA: null }); // <-- NEW: Store an object
+                }
+                
+                let data = uniquePairs.get('Zone-GI').get(gi);
+                data.zones.add(zone);
+                if (state) {
+                    data.stateForNA = state; // <-- Store the state if it's an N/A zone
+                }
             });
             
-            uniquePairs.get('Zone-GI').forEach((zones, gi) => {
+            // Now, the card creation loop:
+            uniquePairs.get('Zone-GI').forEach((data, gi) => {
+                let backContent = "";
+                let promptContent = `What Zone(s) is this GI in?`; // Default
+
+                if (data.zones.has("N/A") && data.zones.size === 1) {
+                    // This is an N/A-only GI (Tasmania, Granite Belt, etc.)
+                    backContent = `This GI does not have a zone. It is in ${data.stateForNA}.`;
+                    promptContent = `What State is this GI in?`; // More accurate prompt
+                } else {
+                    // This is a regular GI, possibly in multiple zones.
+                    let regularZones = Array.from(data.zones).filter(z => z !== "N/A");
+                    backContent = regularZones.sort().join(' / ');
+                }
+
                 flashcardDecks['Zone-GI'].push({
-                    prompt: `What Zone(s) is this GI in?`, // Updated prompt
+                    prompt: promptContent,
                     front: gi,
-                    back: Array.from(zones).sort().join(' / '), // Join all zones from the Set
+                    back: backContent,
                     id: `zg-${cleanId(gi)}`,
                     learned: false
                 });
