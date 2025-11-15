@@ -133,37 +133,145 @@
             list-style-type: disc;
             padding-left: 20px;
         }
+
+        /* --- Flashcard Styles --- */
+        #flashcard {
+            width: 100%;
+            height: 300px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+        #flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        #flashcard.flipped #flashcard-inner {
+            transform: rotateY(180deg);
+        }
+        #flashcard-front, #flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            border-radius: 1rem;
+            border: 2px solid #DED1C1;
+            background-color: #FFFFFF;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        #flashcard-back {
+            transform: rotateY(180deg);
+            background-color: #FDF8F2;
+        }
+        .flashcard-prompt {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #8c7d7d;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .flashcard-content {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.25rem;
+            font-weight: 700;
+            text-align: center;
+        }
+        .flashcard-answer {
+             font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            color: #c0392b;
+        }
+        .btn-nav {
+             background-color: #fff;
+             color: #4B3F3F;
+             font-weight: 700;
+             padding: 0.75rem 1.5rem;
+             border-radius: 8px;
+             border: 2px solid #DED1C1;
+             transition: all 0.2s;
+        }
+        .btn-nav:hover {
+            background-color: #FDF8F2;
+            transform: translateY(-2px);
+        }
+        .btn-nav:disabled {
+            background-color: #f3f3f3;
+            color: #aaa;
+            cursor: not-allowed;
+            transform: none;
+            border-color: #eee;
+        }
+        .btn-secondary {
+            background-color: #4B3F3F;
+            color: #FFFFFF;
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+        .btn-secondary:hover {
+            background-color: #3a3030;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
+    <!-- Start Game Modal -->
     <div id="start-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center transform transition-all">
             <h2 class="text-4xl font-bold mb-4 text-red-900">Australia Wine Master</h2>
-            <p class="text-lg mb-6 text-gray-700">Choose your challenge (10 Rounds)</p>
+            <p class="text-lg mb-6 text-gray-700">Choose your challenge</p>
             
             <div class="space-y-3">
-                <button id="start-mode-1" data-mode="State-Zone" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-xl">State to Zone</button>
-                <button id="start-mode-2" data-mode="Zone-GI" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-xl">Zone to GI</button>
-                <button id="start-mode-3" data-mode="GI-Feature" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-xl">GI to Feature</button>
-                <button id="start-mode-4" data-mode="GI-Producer" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-xl">GI to Producer</button>
+                <button data-mode="State-Zone" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-lg">Game: State to Zone</button>
+                <button data-mode="Zone-GI" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-lg">Game: Zone to GI</button>
+                <button data-mode="GI-Feature" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-lg">Game: GI to Feature</button>
+                <button data-mode="GI-Producer" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-lg">Game: GI to Producer</button>
                 
-                <hr class="my-4 border-t-2 border-gray-200">
+                <hr class="my-3 border-t-2 border-gray-200">
 
-                <button id="explore-data-btn" class="w-full bg-gray-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors text-xl">Explore Data</button>
+                <button id="flashcards-btn" class="w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">Flashcards</button>
+                <button id="explore-data-btn" class="w-full bg-gray-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors text-lg">Explore Data</button>
             </div>
         </div>
     </div>
 
+    <!-- Flashcard Menu Modal -->
+    <div id="flashcard-menu-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center transform transition-all">
+            <h2 class="text-4xl font-bold mb-6 text-blue-900">Flashcard Decks</h2>
+            <p class="text-lg mb-6 text-gray-700">Choose a deck to study</p>
+            
+            <div class="space-y-3">
+                <button data-mode="State-Zone" class="start-flashcards-btn w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">State / Zone</button>
+                <button data-mode="Zone-GI" class="start-flashcards-btn w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">Zone / GI</button>
+                <button data-mode="GI-Feature" class="start-flashcards-btn w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">GI / Feature</button>
+                <button data-mode="GI-Producer" class="start-flashcards-btn w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">GI / Producer</button>
+                
+                <hr class="my-3 border-t-2 border-gray-200">
+                <button id="flashcard-menu-back-btn" class="w-full bg-gray-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors text-lg">Main Menu</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Matching Game Container -->
     <div id="game-container" class="w-full max-w-4xl mx-auto hidden relative pt-20">
-        
-        <button id="main-menu-btn" class="absolute top-4 left-4 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors text-sm z-10">Main Menu</button>
-        
+        <button id="game-main-menu-btn" class="absolute top-4 left-4 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors text-sm z-10">Main Menu</button>
         <div class="text-center mb-6">
             <h1 class="text-4xl md:text-5xl font-bold text-red-900">Australia Wine Master</h1>
             <p class="text-lg text-gray-600 mt-2">Geographical Indication Challenge</p>
         </div>
-
         <div class="flex justify-between items-center mb-6 p-4 rounded-lg bg-red-800/10 text-red-900 game-card">
             <div class="text-center">
                 <h3 class="text-xl font-bold">Round</h3>
@@ -178,18 +286,66 @@
                 <p id="score-info" class="text-2xl font-semibold">0</p>
             </div>
         </div>
-
         <div class="game-card rounded-lg p-6 md:p-8">
             <div class="grid grid-cols-2 gap-4 md:gap-8 mb-4">
                 <h3 id="left-title" class="text-2xl font-bold text-center">Left Column</h3>
                 <h3 id="right-title" class="text-2xl font-bold text-center">Right Column</h3>
             </div>
-            
             <div id="game-rows-container" class="space-y-3">
-                </div>
+                <!-- Rows injected by JS -->
+            </div>
         </div>
     </div>
 
+    <!-- Flashcard Container -->
+    <div id="flashcard-container" class="w-full max-w-2xl mx-auto hidden relative pt-20">
+        <button id="flashcard-main-menu-btn" class="absolute top-4 left-4 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors text-sm z-10">Main Menu</button>
+        
+        <div class="text-center mb-6">
+            <h1 class="text-4xl md:text-5xl font-bold text-blue-900">Flashcards</h1>
+            <p id="flashcard-deck-title" class="text-lg text-gray-600 mt-2">Deck Title</p>
+        </div>
+
+        <!-- Study Mode Controls -->
+        <div class="game-card rounded-lg p-4 md:p-6 mb-6">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-4">
+                    <span class="font-bold">Study:</span>
+                    <label class="flex items-center"><input type="radio" name="studyMode" value="all" class="study-mode-radio" checked> <span class="ml-1">All</span></label>
+                    <label class="flex items-center"><input type="radio" name="studyMode" value="unlearned" class="study-mode-radio"> <span class="ml-1">Unlearned</span></label>
+                    <label class="flex items-center"><input type="radio" name="studyMode" value="learned" class="study-mode-radio"> <span class="ml-1">Learned</span></label>
+                </div>
+                <button id="reset-deck-btn" class="btn-secondary">Reset Deck</button>
+            </div>
+        </div>
+
+        <!-- Flashcard -->
+        <div id="flashcard">
+            <div id="flashcard-inner">
+                <div id="flashcard-front">
+                    <div class="flashcard-prompt">Prompt</div>
+                    <div class="flashcard-content">Front Content</div>
+                </div>
+                <div id="flashcard-back">
+                    <div class="flashcard-content flashcard-answer">Back Content</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Status -->
+        <p id="flashcard-status" class="text-center text-lg font-bold text-gray-700 my-4">Card 1 of 10</p>
+        <p id="flashcard-empty-deck-msg" class="text-center text-lg font-bold text-red-700 my-4 hidden">No cards in this study mode.</p>
+
+        <!-- Navigation -->
+        <div class="flex justify-between items-center mt-4">
+            <button id="prev-card-btn" class="btn-nav">Previous</button>
+            <button id="toggle-learned-btn" class="btn-nav">Mark as Learned</button>
+            <button id="next-card-btn" class="btn-nav">Next</button>
+        </div>
+    </div>
+
+
+    <!-- Success Modal -->
     <div id="success-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center transform transition-all scale-95 opacity-0">
             <div id="modal-message" class="text-4xl font-bold mb-4 text-green-700">Great Job!</div>
@@ -197,6 +353,7 @@
         </div>
     </div>
     
+    <!-- Game Over Modal -->
     <div id="game-over-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center transform transition-all scale-95 opacity-0">
             <h2 class="text-4xl font-bold mb-4 text-red-900">Game Over!</h2>
@@ -209,6 +366,7 @@
         </div>
     </div>
 
+    <!-- Database Explorer Modal -->
     <div id="database-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-3xl w-full h-5/6 transform transition-all flex flex-col">
             <div class="flex justify-between items-center mb-4">
@@ -217,14 +375,14 @@
             </div>
             <p class="text-lg mb-4 text-gray-700">Click any item to expand and see its contents.</p>
             <div id="database-container" class="flex-grow overflow-y-auto space-y-2 pr-2">
-                </div>
+                <!-- Database content will be injected here -->
+            </div>
         </div>
     </div>
 
 
     <script>
         // --- DATA ---
-        // This database is generated directly from the provided 'Australia Wine Law Compendium'
         const gameData = [
             // --- New South Wales ---
             { left: "New South Wales", right: "Northern Slopes", type: "State-Zone" },
@@ -484,9 +642,7 @@
             { left: "Victoria", right: "North East Victoria", type: "State-Zone" },
             { left: "Victoria", right: "Gippsland", type: "State-Zone" },
             { left: "North West Victoria", right: "Murray Darling", type: "Zone-GI" },
-            // Murray Darling features/producers already listed under NSW
             { left: "North West Victoria", right: "Swan Hill", type: "Zone-GI" },
-            // Swan Hill features/producers already listed under NSW
             { left: "Western Victoria", right: "Grampians", type: "Zone-GI" },
             { left: "Grampians", right: "Grampians National Park", type: "GI-Feature" },
             { left: "Grampians", right: "Best's Wines", type: "GI-Producer" },
@@ -698,6 +854,18 @@
         let selectedLeft = null;  // Will store the button element
         let selectedRight = null; // Will store the button element
 
+        // --- FLASHCARD STATE ---
+        const flashcardDecks = {
+            'State-Zone': [],
+            'Zone-GI': [],
+            'GI-Feature': [],
+            'GI-Producer': []
+        };
+        let currentFlashcardDeck = [];
+        let currentFilteredDeck = [];
+        let currentCardIndex = 0;
+        let isCardFlipped = false;
+        
         // --- DOM ELEMENTS ---
         const gameContainer = document.getElementById('game-container');
         const startModal = document.getElementById('start-modal');
@@ -712,12 +880,31 @@
         const gameOverModal = document.getElementById('game-over-modal');
         const nextRoundBtn = document.getElementById('next-round-btn');
         const playAgainBtn = document.getElementById('play-again-btn');
-        const mainMenuBtn = document.getElementById('main-menu-btn');
-        // New DB Elements
+        const gameMainMenuBtn = document.getElementById('game-main-menu-btn');
+        // DB Elements
         const exploreDataBtn = document.getElementById('explore-data-btn');
         const databaseModal = document.getElementById('database-modal');
         const closeDbBtn = document.getElementById('close-db-btn');
         const databaseContainer = document.getElementById('database-container');
+        // Flashcard Elements
+        const flashcardsBtn = document.getElementById('flashcards-btn');
+        const flashcardMenuModal = document.getElementById('flashcard-menu-modal');
+        const flashcardMenuBackBtn = document.getElementById('flashcard-menu-back-btn');
+        const startFlashcardsBtns = document.querySelectorAll('.start-flashcards-btn');
+        const flashcardContainer = document.getElementById('flashcard-container');
+        const flashcardMainMenuBtn = document.getElementById('flashcard-main-menu-btn');
+        const flashcardDeckTitle = document.getElementById('flashcard-deck-title');
+        const studyModeRadios = document.querySelectorAll('.study-mode-radio');
+        const resetDeckBtn = document.getElementById('reset-deck-btn');
+        const flashcard = document.getElementById('flashcard');
+        const flashcardFront = document.getElementById('flashcard-front');
+        const flashcardBack = document.getElementById('flashcard-back');
+        const flashcardStatus = document.getElementById('flashcard-status');
+        const flashcardEmptyDeckMsg = document.getElementById('flashcard-empty-deck-msg');
+        const prevCardBtn = document.getElementById('prev-card-btn');
+        const nextCardBtn = document.getElementById('next-card-btn');
+        const toggleLearnedBtn = document.getElementById('toggle-learned-btn');
+
 
         // --- Database JSON Generation ---
         const databaseJSON = {};
@@ -879,17 +1066,6 @@
 
 
         // --- GAME FUNCTIONS ---
-
-        /**
-         * Shuffles an array in place.
-         * @param {Array} array The array to shuffle.
-         */
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-        }
 
         /**
          * Sets up the 10 rounds for the selected game mode
@@ -1080,42 +1256,33 @@
             leftBtn.classList.remove('selected');
             rightBtn.classList.remove('selected');
 
-            // --- BUG FIX ---
-            // Check if the selected left value has the selected right value in its set of correct answers
             const isCorrect = leftToRightPairs.get(leftValue)?.has(rightValue);
 
             if (isCorrect) {
                 // --- CORRECT MATCH ---
                 matchesMade++;
-                
                 const currentAttempts = itemAttempts.get(leftId);
                 
-                // Award points
                 if (currentAttempts === 0) {
                     score += 2; // +2 for first-try match
                 } else {
                     score += 1; // +1 for subsequent match
                 }
 
-                // Style and disable correct pair
                 leftBtn.classList.add('correct');
                 rightBtn.classList.add('correct');
                 leftBtn.disabled = true;
                 rightBtn.disabled = true;
 
-                // Check if round is over
                 if (matchesMade === 5) {
                     setTimeout(showSuccessModal, 500);
                 }
             } else {
                 // --- INCORRECT MATCH ---
                 score = Math.max(0, score - 1); // Decrement score
-                
-                // Increment attempt count for this specific left button
                 const currentAttempts = itemAttempts.get(leftId);
                 itemAttempts.set(leftId, currentAttempts + 1); 
 
-                // Shake animation
                 leftBtn.classList.add('incorrect');
                 rightBtn.classList.add('incorrect');
                 setTimeout(() => {
@@ -1123,22 +1290,14 @@
                     rightBtn.classList.remove('incorrect');
                 }, 500);
             }
-
             updateScoreboard();
         }
 
-
-        /**
-         * Updates the score and round display.
-         */
         function updateScoreboard() {
             scoreInfo.textContent = score;
             roundInfo.textContent = `${Math.min(currentRound, TOTAL_ROUNDS)} / ${TOTAL_ROUNDS}`;
         }
         
-        /**
-         * Shows the success modal with a random message.
-         */
         function showSuccessModal() {
             const modalMessage = document.getElementById('modal-message');
             const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
@@ -1150,9 +1309,6 @@
             }, 10);
         }
 
-        /**
-         * Hides the success modal and starts the next round.
-         */
         function hideSuccessModal() {
             successModal.firstElementChild.classList.add('scale-95', 'opacity-0');
             setTimeout(() => {
@@ -1162,9 +1318,6 @@
             }, 200);
         }
 
-        /**
-         * Shows the game over screen with a final score, percentage, and message.
-         */
         function showGameOver() {
             const finalScoreEl = document.getElementById('final-score');
             const finalPercentageEl = document.getElementById('final-percentage');
@@ -1175,19 +1328,12 @@
             const percentage = Math.round(Math.max(0, (score / maxScore) * 100));
 
             let message = '';
-            if (percentage === 100) {
-                message = "Perfect Score!";
-            } else if (percentage >= 90) {
-                message = "You're a Master!";
-            } else if (percentage >= 80) {
-                message = "Superb!";
-            } else if (percentage >= 70) {
-                message = "Great work.";
-            } else if (percentage >= 50) {
-                message = "Nicely done!";
-            } else {
-                message = "Keep practicing!";
-            }
+            if (percentage === 100) message = "Perfect Score!";
+            else if (percentage >= 90) message = "You're a Master!";
+            else if (percentage >= 80) message = "Superb!";
+            else if (percentage >= 70) message = "Great work.";
+            else if (percentage >= 50) message = "Nicely done!";
+            else message = "Keep practicing!";
 
             finalScoreEl.textContent = score;
             finalPercentageEl.textContent = `${percentage}%`;
@@ -1199,17 +1345,223 @@
             }, 10);
         }
 
-        /**
-         * Hides the game over screen and starts a new game.
-         */
         function hideGameOver() {
             gameOverModal.firstElementChild.classList.add('scale-95', 'opacity-0');
             setTimeout(() => {
                 gameOverModal.classList.add('hidden');
-                // Don't auto-start, go to main menu
-                startModal.classList.remove('hidden');
+                startModal.classList.remove('hidden'); // Go to main menu
             }, 200);
         }
+
+        // --- FLASHCARD FUNCTIONS ---
+        
+        function buildFlashcardDecks() {
+            // Clear existing decks
+            Object.keys(flashcardDecks).forEach(key => flashcardDecks[key] = []);
+            
+            const uniquePairs = new Map();
+
+            // State-Zone Deck: "What State is [ZONE] in?" -> [STATE]
+            uniquePairs.set('State-Zone', new Map());
+            gameData.filter(p => p.type === 'State-Zone').forEach(p => {
+                uniquePairs.get('State-Zone').set(p.right, p.left); // key=Zone, value=State
+            });
+            uniquePairs.get('State-Zone').forEach((state, zone) => {
+                flashcardDecks['State-Zone'].push({
+                    prompt: `What State is this Zone in?`,
+                    front: zone,
+                    back: state,
+                    id: `sz-${zone}`,
+                    learned: false
+                });
+            });
+
+            // Zone-GI Deck: "What Zone is [GI] in?" -> [ZONE]
+            uniquePairs.set('Zone-GI', new Map());
+            gameData.filter(p => p.type === 'Zone-GI').forEach(p => {
+                let zone = p.left.includes("-N/A") ? "N/A" : p.left;
+                uniquePairs.get('Zone-GI').set(p.right, zone); // key=GI, value=Zone
+            });
+            uniquePairs.get('Zone-GI').forEach((zone, gi) => {
+                flashcardDecks['Zone-GI'].push({
+                    prompt: `What Zone is this GI in?`,
+                    front: gi,
+                    back: zone,
+                    id: `zg-${gi}`,
+                    learned: false
+                });
+            });
+
+            // GI-Feature Deck: "What GI has this feature?" -> [GI]
+            uniquePairs.set('GI-Feature', new Map());
+            gameData.filter(p => p.type === 'GI-Feature' && p.right !== 'N/A' && p.right !== 'none').forEach(p => {
+                if (!uniquePairs.get('GI-Feature').has(p.right)) {
+                    uniquePairs.get('GI-Feature').set(p.right, new Set());
+                }
+                uniquePairs.get('GI-Feature').get(p.right).add(p.left); // key=Feature, value=Set(GIs)
+            });
+            uniquePairs.get('GI-Feature').forEach((gis, feature) => {
+                flashcardDecks['GI-Feature'].push({
+                    prompt: `What GI has this feature?`,
+                    front: feature,
+                    back: Array.from(gis).join(' / '),
+                    id: `gf-${feature.replace(/\s/g, '')}`,
+                    learned: false
+                });
+            });
+
+            // GI-Producer Deck: "What GI is [PRODUCER] in?" -> [GI]
+            uniquePairs.set('GI-Producer', new Map());
+            gameData.filter(p => p.type === 'GI-Producer' && p.right !== 'N/A').forEach(p => {
+                 if (!uniquePairs.get('GI-Producer').has(p.right)) {
+                    uniquePairs.get('GI-Producer').set(p.right, new Set());
+                }
+                uniquePairs.get('GI-Producer').get(p.right).add(p.left); // key=Producer, value=Set(GIs)
+            });
+            uniquePairs.get('GI-Producer').forEach((gis, producer) => {
+                flashcardDecks['GI-Producer'].push({
+                    prompt: `What GI is this producer in?`,
+                    front: producer,
+                    back: Array.from(gis).join(' / '),
+                    id: `gp-${producer.replace(/\s/g, '')}`,
+                    learned: false
+                });
+            });
+        }
+
+        function initFlashcards(mode) {
+            currentGameMode = mode; // e.g., 'State-Zone'
+            currentFlashcardDeck = flashcardDecks[mode];
+            shuffleArray(currentFlashcardDeck);
+
+            // Set title
+            if (mode === 'State-Zone') flashcardDeckTitle.textContent = 'State / Zone Deck';
+            if (mode === 'Zone-GI') flashcardDeckTitle.textContent = 'Zone / GI Deck';
+            if (mode === 'GI-Feature') flashcardDeckTitle.textContent = 'GI / Feature Deck';
+            if (mode === 'GI-Producer') flashcardDeckTitle.textContent = 'GI / Producer Deck';
+
+            // Reset study mode filter
+            document.querySelector('.study-mode-radio[value="all"]').checked = true;
+            buildFilteredDeck();
+            showCard(0);
+
+            startModal.classList.add('hidden');
+            flashcardMenuModal.classList.add('hidden');
+            flashcardContainer.classList.remove('hidden');
+        }
+
+        function buildFilteredDeck() {
+            const studyMode = document.querySelector('.study-mode-radio:checked').value;
+            if (studyMode === 'all') {
+                currentFilteredDeck = [...currentFlashcardDeck];
+            } else if (studyMode === 'unlearned') {
+                currentFilteredDeck = currentFlashcardDeck.filter(card => !card.learned);
+            } else if (studyMode === 'learned') {
+                currentFilteredDeck = currentFlashcardDeck.filter(card => card.learned);
+            }
+            isCardFlipped = false;
+            flashcard.classList.remove('flipped');
+            showCard(0);
+        }
+
+        function showCard(index) {
+            currentCardIndex = index;
+            isCardFlipped = false;
+            flashcard.classList.remove('flipped');
+
+            if (currentFilteredDeck.length === 0) {
+                flashcard.classList.add('hidden');
+                flashcardEmptyDeckMsg.classList.remove('hidden');
+                flashcardStatus.textContent = "Card 0 of 0";
+                prevCardBtn.disabled = true;
+                nextCardBtn.disabled = true;
+                toggleLearnedBtn.disabled = true;
+                return;
+            }
+
+            flashcard.classList.remove('hidden');
+            flashcardEmptyDeckMsg.classList.add('hidden');
+            toggleLearnedBtn.disabled = false;
+
+            const card = currentFilteredDeck[index];
+            
+            flashcardFront.querySelector('.flashcard-prompt').textContent = card.prompt;
+            flashcardFront.querySelector('.flashcard-content').textContent = card.front;
+            flashcardBack.querySelector('.flashcard-answer').textContent = card.back;
+            
+            flashcardStatus.textContent = `Card ${index + 1} of ${currentFilteredDeck.length}`;
+
+            // Update nav buttons
+            prevCardBtn.disabled = (index === 0);
+            nextCardBtn.disabled = (index === currentFilteredDeck.length - 1);
+            
+            // Update learned button
+            if (card.learned) {
+                toggleLearnedBtn.textContent = 'Mark as Unlearned';
+                toggleLearnedBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                toggleLearnedBtn.classList.add('bg-gray-500', 'hover:bg-gray-600');
+            } else {
+                toggleLearnedBtn.textContent = 'Mark as Learned';
+                toggleLearnedBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600');
+                toggleLearnedBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+            }
+        }
+
+        function flipCard() {
+            isCardFlipped = !isCardFlipped;
+            flashcard.classList.toggle('flipped');
+        }
+
+        function nextCard() {
+            if (currentCardIndex < currentFilteredDeck.length - 1) {
+                showCard(currentCardIndex + 1);
+            }
+        }
+
+        function prevCard() {
+            if (currentCardIndex > 0) {
+                showCard(currentCardIndex - 1);
+            }
+        }
+
+        function toggleLearned() {
+            const card = currentFilteredDeck[currentCardIndex];
+            // Find this card in the *main* deck and update it
+            const mainDeckCard = currentFlashcardDeck.find(c => c.id === card.id);
+            mainDeckCard.learned = !mainDeckCard.learned;
+            
+            // Update the button text immediately
+            if (mainDeckCard.learned) {
+                toggleLearnedBtn.textContent = 'Mark as Unlearned';
+                toggleLearnedBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                toggleLearnedBtn.classList.add('bg-gray-500', 'hover:bg-gray-600');
+            } else {
+                toggleLearnedBtn.textContent = 'Mark as Learned';
+                toggleLearnedBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600');
+                toggleLearnedBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+            }
+
+            // Re-filter the deck *after* a short delay so the user doesn't
+            // see an abrupt change if the card disappears from the filtered deck
+            setTimeout(() => {
+                buildFilteredDeck();
+            }, 200);
+        }
+
+        function resetDeck() {
+            currentFlashcardDeck.forEach(card => card.learned = false);
+            buildFilteredDeck();
+            showCard(0);
+        }
+
+        function showMainMenu() {
+            gameContainer.classList.add('hidden');
+            flashcardContainer.classList.add('hidden');
+            flashcardMenuModal.classList.add('hidden');
+            databaseModal.classList.add('hidden');
+            startModal.classList.remove('hidden');
+        }
+
 
         // --- EVENT LISTENERS ---
         startGameBtns.forEach(btn => {
@@ -1223,11 +1575,7 @@
         
         nextRoundBtn.addEventListener('click', hideSuccessModal);
         playAgainBtn.addEventListener('click', hideGameOver);
-
-        mainMenuBtn.addEventListener('click', () => {
-            gameContainer.classList.add('hidden');
-            startModal.classList.remove('hidden');
-        });
+        gameMainMenuBtn.addEventListener('click', showMainMenu);
 
         // --- Database Listeners ---
         exploreDataBtn.addEventListener('click', () => {
@@ -1239,6 +1587,35 @@
         closeDbBtn.addEventListener('click', () => {
             databaseModal.classList.add('hidden');
         });
+
+        // --- Flashcard Listeners ---
+        flashcardsBtn.addEventListener('click', () => {
+            startModal.classList.add('hidden');
+            flashcardMenuModal.classList.remove('hidden');
+        });
+
+        flashcardMenuBackBtn.addEventListener('click', () => {
+            flashcardMenuModal.classList.add('hidden');
+            startModal.classList.remove('hidden');
+        });
+
+        startFlashcardsBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                initFlashcards(btn.dataset.mode);
+            });
+        });
+
+        flashcard.addEventListener('click', flipCard);
+        prevCardBtn.addEventListener('click', prevCard);
+        nextCardBtn.addEventListener('click', nextCard);
+        toggleLearnedBtn.addEventListener('click', toggleLearned);
+        resetDeckBtn.addEventListener('click', resetDeck);
+        studyModeRadios.forEach(radio => radio.addEventListener('change', buildFilteredDeck));
+        flashcardMainMenuBtn.addEventListener('click', showMainMenu);
+
+
+        // --- Initial App Setup ---
+        buildFlashcardDecks();
 
     </script>
 </body>
