@@ -15,7 +15,7 @@
             color: #4B3F3F; /* Dark brown text */
         }
         h1, h2, h3, h4, h5 {
-            font-family: 'Playfair Display', serif;
+            font-family: 'Playfair+Display', serif;
         }
         .game-card {
             background-color: #FFFFFF;
@@ -28,7 +28,10 @@
             background-color: #fff;
             min-height: 60px; /* Ensure buttons have a good clickable height */
             display: flex;
+            width: 100%;
             align-items: center;
+            justify-content: center; /* Center text */
+            text-align: center;
         }
         .btn-choice:hover:not(:disabled) {
             background-color: #FDF8F2;
@@ -65,7 +68,7 @@
             backdrop-filter: blur(5px);
         }
 
-        /* --- New Database Explorer Styles --- */
+        /* --- Database Explorer Styles --- */
         .db-item {
             padding: 12px 16px;
             background-color: #fff;
@@ -136,25 +139,26 @@
 
     <div id="start-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center transform transition-all">
-            <h2 class="text-4xl font-bold mb-4 text-red-900">Welcome!</h2>
-            <p class="text-lg mb-6 text-left text-gray-700">Test your knowledge of Australian Wine Laws.</p>
-            <div class="text-left space-y-3 mb-8 bg-red-800/5 p-4 rounded-lg border border-red-800/10">
-                <p><strong class="text-red-800">GOAL:</strong> In each round, match all 5 items from the left column to their correct counterparts on the right.</p>
-                <ul class="list-disc list-inside pl-4 text-gray-600">
-                    <li>Rounds 1-5: Match <strong>State</strong> to <strong>Zone</strong>.</li>
-                    <li>Rounds 6-10: Match <strong>Zone</strong> to <strong>GI</strong>.</li>
-                    <li>Rounds 11-15: Match <strong>GI</strong> to <strong>Natural Feature</strong>.</li>
-                    <li>Rounds 16-20: Match <strong>GI</strong> to <strong>Key Producer</strong>.</li>
-                </ul>
-            </div>
-            <div class="flex flex-col space-y-3">
-                <button id="start-game-btn" class="w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-xl">Start Game</button>
+            <h2 class="text-4xl font-bold mb-4 text-red-900">Australia Wine Master</h2>
+            <p class="text-lg mb-6 text-gray-700">Choose your challenge (10 Rounds)</p>
+            
+            <div class="space-y-3">
+                <button id="start-mode-1" data-mode="State-Zone" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-xl">State to Zone</button>
+                <button id="start-mode-2" data-mode="Zone-GI" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-xl">Zone to GI</button>
+                <button id="start-mode-3" data-mode="GI-Feature" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-xl">GI to Feature</button>
+                <button id="start-mode-4" data-mode="GI-Producer" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-xl">GI to Producer</button>
+                
+                <hr class="my-4 border-t-2 border-gray-200">
+
                 <button id="explore-data-btn" class="w-full bg-gray-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors text-xl">Explore Data</button>
             </div>
         </div>
     </div>
 
-    <div id="game-container" class="w-full max-w-4xl mx-auto hidden">
+    <div id="game-container" class="w-full max-w-4xl mx-auto hidden relative pt-20">
+        
+        <button id="main-menu-btn" class="absolute top-4 left-4 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors text-sm z-10">Main Menu</button>
+        
         <div class="text-center mb-6">
             <h1 class="text-4xl md:text-5xl font-bold text-red-900">Australia Wine Master</h1>
             <p class="text-lg text-gray-600 mt-2">Geographical Indication Challenge</p>
@@ -163,7 +167,7 @@
         <div class="flex justify-between items-center mb-6 p-4 rounded-lg bg-red-800/10 text-red-900 game-card">
             <div class="text-center">
                 <h3 class="text-xl font-bold">Round</h3>
-                <p id="round-info" class="text-2xl font-semibold">1 / 20</p>
+                <p id="round-info" class="text-2xl font-semibold">1 / 10</p>
             </div>
             <div class="text-center">
                 <h3 id="round-prompt" class="text-xl font-bold">Match the items</h3>
@@ -176,19 +180,13 @@
         </div>
 
         <div class="game-card rounded-lg p-6 md:p-8">
-            <div class="grid grid-cols-2 gap-4 md:gap-8">
-                <div>
-                    <h3 id="left-title" class="text-2xl font-bold text-center mb-4">Left Column</h3>
-                    <div id="left-container" class="flex flex-col space-y-3">
-                        </div>
-                </div>
-
-                <div>
-                    <h3 id="right-title" class="text-2xl font-bold text-center mb-4">Right Column</h3>
-                    <div id="right-container" class="flex flex-col space-y-3">
-                        </div>
-                </div>
+            <div class="grid grid-cols-2 gap-4 md:gap-8 mb-4">
+                <h3 id="left-title" class="text-2xl font-bold text-center">Left Column</h3>
+                <h3 id="right-title" class="text-2xl font-bold text-center">Right Column</h3>
             </div>
+            
+            <div id="game-rows-container" class="space-y-3">
+                </div>
         </div>
     </div>
 
@@ -326,10 +324,10 @@
             { left: "Swan Hill", right: "Andrew Peace Wines", type: "GI-Producer" },
             { left: "Swan Hill", right: "Buller Wines", type: "GI-Producer" },
 
-            // --- Queensland ---
-            { left: "Queensland", right: "Queensland", type: "State-Zone" }, // Dummy zone for structure
-            { left: "Queensland", right: "Granite Belt", type: "Zone-GI" },
-            { left: "Queensland", right: "South Burnett", type: "Zone-GI" },
+            // --- Queensland (Logic Update) ---
+            { left: "Queensland", right: "N/A", type: "State-Zone" },
+            { left: "Queensland-N/A", right: "Granite Belt", type: "Zone-GI" },
+            { left: "Queensland-N/A", right: "South Burnett", type: "Zone-GI" },
             { left: "Granite Belt", right: "The Granite Belt", type: "GI-Feature" },
             { left: "Granite Belt", right: "Great Dividing Range", type: "GI-Feature" },
             { left: "Granite Belt", right: "Robert Channon", type: "GI-Producer" },
@@ -440,7 +438,7 @@
             { left: "Coonawarra", right: "Wynns Coonawarra Estate", type: "GI-Producer" },
             { left: "Coonawarra", right: "Zema Estate", type: "GI-Producer" },
             { left: "Limestone Coast", right: "Padthaway", type: "Zone-GI" },
-            // No features listed for Padthaway
+            { left: "Padthaway", right: "N/A", type: "GI-Feature" },
             { left: "Padthaway", right: "Padthaway Estate", type: "GI-Producer" },
             { left: "Padthaway", right: "Stonehaven", type: "GI-Producer" },
             { left: "Padthaway", right: "Browns of Padthaway", type: "GI-Producer" },
@@ -453,7 +451,7 @@
             { left: "Robe", right: "Lake George", type: "GI-Feature" },
             { left: "Robe", right: "Lake Eliza", type: "GI-Feature" },
             { left: "Robe", right: "Lake St. Clair", type: "GI-Feature" },
-            // No key producers listed for Robe
+            { left: "Robe", right: "N/A", type: "GI-Producer" },
             { left: "Limestone Coast", right: "Wrattonbully", type: "Zone-GI" },
             { left: "Wrattonbully", right: "Stewarts Range", type: "GI-Feature" },
             { left: "Wrattonbully", right: "Naracoorte Range", type: "GI-Feature" },
@@ -465,9 +463,10 @@
             { left: "Mount Gambier", right: "Southern Ocean", type: "GI-Feature" },
             { left: "Mount Gambier", right: "Caroline Hills", type: "GI-Producer" },
             
-            // --- Tasmania ---
-            { left: "Tasmania", right: "South Eastern Australia", type: "State-Zone" }, // Per source 4
-            { left: "South Eastern Australia", right: "Tasmania", type: "Zone-GI" },
+            // --- Tasmania (Logic Update) ---
+            { left: "Tasmania", right: "N/A", type: "State-Zone" },
+            { left: "Tasmania-N/A", right: "Tasmania", type: "Zone-GI" },
+            { left: "Tasmania", right: "N/A", type: "GI-Feature" },
             { left: "Tasmania", right: "Pipers Brook Vineyard", type: "GI-Producer" },
             { left: "Tasmania", right: "Tamar Ridge", type: "GI-Producer" },
             { left: "Tasmania", right: "Jansz", type: "GI-Producer" },
@@ -641,8 +640,7 @@
             { left: "Pemberton", right: "Salitage", type: "GI-Producer" },
             { left: "South West Australia", right: "Great Southern", type: "Zone-GI" },
             { left: "Great Southern", right: "Southern Ocean", type: "GI-Feature" },
-            // Great Southern GIs
-            { left: "Great Southern", right: "Denmark", type: "Zone-GI" }, // Denmark is a Subregion/GI within the Great Southern GI/Region. This is a Zone -> GI mapping.
+            { left: "Great Southern", right: "Denmark", type: "Zone-GI" }, 
             { left: "Denmark", right: "Southern Ocean", type: "GI-Feature" },
             { left: "Denmark", right: "Singlefile Estate", type: "GI-Producer" },
             { left: "Denmark", right: "Harewood Estate", type: "GI-Producer" },
@@ -668,26 +666,31 @@
             { left: "Mount Barker", right: "Mount Barker Hill", type: "GI-Feature" },
             { left: "Mount Barker", right: "Forest Hill Vineyard", type: "GI-Producer" },
             { left: "Mount Barker", right: "Plantagenet", type: "GI-Producer" },
-            // Greater Perth Zone GIs
             { left: "Greater Perth", right: "Peel", type: "Zone-GI" },
             { left: "Greater Perth", right: "Perth Hills", type: "Zone-GI" },
             { left: "Greater Perth", right: "Swan District", type: "Zone-GI" },
-            // Doc does not contain detailed entries for Peel, Perth Hills, or Swan District GIs.
+            { left: "Peel", right: "N/A", type: "GI-Feature" },
+            { left: "Peel", right: "N/A", type: "GI-Producer" },
+            { left: "Perth Hills", right: "N/A", type: "GI-Feature" },
+            { left: "Perth Hills", right: "N/A", type: "GI-Producer" },
+            { left: "Swan District", right: "N/A", type: "GI-Feature" },
+            { left: "Swan District", right: "N/A", type: "GI-Producer" },
         ];
 
         // --- Create specialized data arrays ---
         const stateZonePairs = gameData.filter(q => q.type === 'State-Zone');
         const zoneGIPairs = gameData.filter(q => q.type === 'Zone-GI');
         const giFeaturePairs = gameData.filter(q => q.type === 'GI-Feature' && q.right !== 'N/A' && q.right !== 'none');
-        const giProducerPairs = gameData.filter(q => q.type === 'GI-Producer');
+        const giProducerPairs = gameData.filter(q => q.type === 'GI-Producer' && q.right !== 'N/A');
 
         const positiveMessages = ["Great job!", "Good work.", "What a pro!", "Awesome!", "You're on a roll!", "Magnifique!", "Superb!"];
-        const TOTAL_ROUNDS = 20;
+        const TOTAL_ROUNDS = 10;
 
         // --- GAME STATE ---
         let score = 0;
         let currentRound = 1;
-        let gameRounds = []; // This will be an array of 20 arrays (each inner array has 5 pairs)
+        let currentGameMode = '';
+        let gameRounds = []; // This will be an array of 10 arrays (each inner array has 5 pairs)
         let currentRoundPairs = []; // The 5 pairs for the current round
         let leftToRightPairs = new Map(); // Stores all correct matches, e.g. "NSW" -> Set("Hunter", "Big Rivers")
         let itemAttempts = new Map(); // Tracks attempts per *button*, e.g. "left-0" -> 1
@@ -698,28 +701,33 @@
         // --- DOM ELEMENTS ---
         const gameContainer = document.getElementById('game-container');
         const startModal = document.getElementById('start-modal');
-        const startGameBtn = document.getElementById('start-game-btn');
+        const startGameBtns = document.querySelectorAll('.start-game-btn');
         const scoreInfo = document.getElementById('score-info');
         const roundInfo = document.getElementById('round-info');
         const roundPrompt = document.getElementById('round-prompt');
         const leftTitle = document.getElementById('left-title');
         const rightTitle = document.getElementById('right-title');
-        const leftContainer = document.getElementById('left-container');
-        const rightContainer = document.getElementById('right-container');
+        const gameRowsContainer = document.getElementById('game-rows-container');
         const successModal = document.getElementById('success-modal');
         const gameOverModal = document.getElementById('game-over-modal');
         const nextRoundBtn = document.getElementById('next-round-btn');
         const playAgainBtn = document.getElementById('play-again-btn');
+        const mainMenuBtn = document.getElementById('main-menu-btn');
         // New DB Elements
         const exploreDataBtn = document.getElementById('explore-data-btn');
         const databaseModal = document.getElementById('database-modal');
         const closeDbBtn = document.getElementById('close-db-btn');
         const databaseContainer = document.getElementById('database-container');
 
-        // --- NEW: Database JSON Generation ---
+        // --- Database JSON Generation ---
         const databaseJSON = {};
 
         function processDatabase() {
+            // Clear database to prevent duplicates on re-processing
+            for (const key in databaseJSON) {
+                delete databaseJSON[key];
+            }
+
             gameData.forEach(item => {
                 const { left, right, type } = item;
                 
@@ -728,12 +736,25 @@
                     if (!databaseJSON[left].zones[right]) databaseJSON[left].zones[right] = { gis: {} };
                 } 
                 else if (type === 'Zone-GI') {
-                    // Find which state this zone belongs to
-                    for (const state in databaseJSON) {
-                        if (databaseJSON[state].zones[left]) {
-                            if (!databaseJSON[state].zones[left].gis[right]) {
-                                databaseJSON[state].zones[left].gis[right] = { features: new Set(), producers: new Set() };
+                    let stateName = null;
+                    let zoneName = left;
+
+                    if (left.includes("-N/A")) {
+                        stateName = left.split("-N/A")[0];
+                        zoneName = "N/A";
+                    } else {
+                        // Find which state this zone belongs to
+                        for (const state in databaseJSON) {
+                            if (databaseJSON[state].zones[left]) {
+                                stateName = state;
+                                break;
                             }
+                        }
+                    }
+
+                    if (stateName && databaseJSON[stateName] && databaseJSON[stateName].zones[zoneName]) {
+                        if (!databaseJSON[stateName].zones[zoneName].gis[right]) {
+                            databaseJSON[stateName].zones[zoneName].gis[right] = { features: new Set(), producers: new Set() };
                         }
                     }
                 } 
@@ -746,7 +767,7 @@
                         }
                     }
                 } 
-                else if (type === 'GI-Producer') {
+                else if (type === 'GI-Producer' && right !== 'N/A') {
                     for (const state in databaseJSON) {
                         for (const zone in databaseJSON[state].zones) {
                             if (databaseJSON[state].zones[zone].gis[left]) {
@@ -769,7 +790,7 @@
             }
         }
 
-        // --- NEW: Database HTML Builder ---
+        // --- Database HTML Builder ---
         function buildDatabaseExplorer() {
             databaseContainer.innerHTML = ''; // Clear old data
             const states = Object.keys(databaseJSON).sort();
@@ -789,7 +810,7 @@
                 zones.forEach(zone => {
                     const zoneData = stateData.zones[zone];
                     const giCount = Object.keys(zoneData.gis).length;
-                    const zoneId = `db-zone-${zone.replace(/\s/g, '')}`;
+                    const zoneId = `db-zone-${state.replace(/\s/g, '')}-${zone.replace(/\s/g, '')}`;
 
                     if (giCount > 0) {
                         const zoneDiv = document.createElement('div');
@@ -802,7 +823,7 @@
                         const gisInZone = Object.keys(zoneData.gis).sort();
                         gisInZone.forEach(gi => {
                             const giData = zoneData.gis[gi];
-                            const giId = `db-gi-${gi.replace(/\s/g, '').replace(/[\(\)]/g, '')}`;
+                            const giId = `db-gi-${state.replace(/\s/g, '')}-${zone.replace(/\s/g, '')}-${gi.replace(/\s/g, '').replace(/[\(\)]/g, '')}`;
                             
                             const giDiv = document.createElement('div');
                             giDiv.innerHTML = `<div class="db-item db-gi" data-target="${giId}">${gi}</div>`;
@@ -815,12 +836,12 @@
                             
                             // Add Features
                             detailsHtml += '<h5>Major Natural Features:</h5><ul>';
-                            Array.from(giData.features).forEach(f => detailsHtml += `<li>${f}</li>`);
+                            Array.from(giData.features).sort().forEach(f => detailsHtml += `<li>${f}</li>`);
                             detailsHtml += '</ul>';
                             
                             // Add Producers
                             detailsHtml += '<h5>Key Producers:</h5><ul>';
-                            Array.from(giData.producers).forEach(p => detailsHtml += `<li>${p}</li>`);
+                            Array.from(giData.producers).sort().forEach(p => detailsHtml += `<li>${p}</li>`);
                             detailsHtml += '</ul>';
                             
                             detailsHtml += '</div>';
@@ -843,7 +864,7 @@
             });
         }
 
-        // --- NEW: Database Event Listener ---
+        // --- Database Event Listener ---
         databaseContainer.addEventListener('click', function(e) {
             const target = e.target.closest('.db-item');
             if (target) {
@@ -857,7 +878,7 @@
         });
 
 
-        // --- FUNCTIONS ---
+        // --- GAME FUNCTIONS ---
 
         /**
          * Shuffles an array in place.
@@ -871,33 +892,42 @@
         }
 
         /**
-         * Initializes the game or starts a new one.
+         * Sets up the 10 rounds for the selected game mode
+         */
+        function buildGameRounds() {
+            gameRounds = [];
+            let sourcePairs = [];
+
+            if (currentGameMode === 'State-Zone') {
+                sourcePairs = [...stateZonePairs];
+            } else if (currentGameMode === 'Zone-GI') {
+                sourcePairs = [...zoneGIPairs];
+            } else if (currentGameMode === 'GI-Feature') {
+                sourcePairs = [...giFeaturePairs];
+            } else if (currentGameMode === 'GI-Producer') {
+                sourcePairs = [...giProducerPairs];
+            }
+
+            shuffleArray(sourcePairs);
+            
+            // Build 10 rounds, 5 pairs each
+            for (let i = 0; i < TOTAL_ROUNDS; i++) {
+                // Ensure we have enough pairs, looping if necessary
+                let roundPairs = [];
+                for (let j = 0; j < 5; j++) {
+                    roundPairs.push(sourcePairs[(i * 5 + j) % sourcePairs.length]);
+                }
+                gameRounds.push(roundPairs);
+            }
+        }
+
+        /**
+         * Initializes the game.
          */
         function initGame() {
             score = 0;
             currentRound = 1;
-            gameRounds = [];
-
-            // Shuffle each pair type
-            shuffleArray(stateZonePairs);
-            shuffleArray(zoneGIPairs);
-            shuffleArray(giFeaturePairs);
-            shuffleArray(giProducerPairs);
-
-            // Build the 20 rounds, 5 rounds for each type
-            for (let i = 0; i < 5; i++) {
-                gameRounds.push(stateZonePairs.slice(i * 5, (i + 1) * 5));
-            }
-            for (let i = 0; i < 5; i++) {
-                gameRounds.push(zoneGIPairs.slice(i * 5, (i + 1) * 5));
-            }
-            for (let i = 0; i < 5; i++) {
-                gameRounds.push(giFeaturePairs.slice(i * 5, (i + 1) * 5));
-            }
-            for (let i = 0; i < 5; i++) {
-                gameRounds.push(giProducerPairs.slice(i * 5, (i + 1) * 5));
-            }
-            
+            buildGameRounds(); // Build the 10 rounds for the current mode
             startRound();
         }
         
@@ -943,8 +973,7 @@
          * Renders the choice buttons for the current round.
          */
         function renderButtons(leftItems, rightItems, pairType) {
-            leftContainer.innerHTML = '';
-            rightContainer.innerHTML = '';
+            gameRowsContainer.innerHTML = ''; // Clear old rows
             itemAttempts.clear(); // Clear attempts for new buttons
 
             // Set titles and prompt based on round type
@@ -956,42 +985,53 @@
                     break;
                 case 'Zone-GI':
                     leftTitle.textContent = "Zone";
-                    rightTitle.textContent = "Geographical Indication (GI)";
+                    rightTitle.textContent = "GI";
                     roundPrompt.textContent = "Match the Zone to its GI";
                     break;
                 case 'GI-Feature':
-                    leftTitle.textContent = "Geographical Indication (GI)";
+                    leftTitle.textContent = "GI";
                     rightTitle.textContent = "Major Natural Feature";
                     roundPrompt.textContent = "Match the GI to its Feature";
                     break;
                 case 'GI-Producer':
-                    leftTitle.textContent = "Geographical Indication (GI)";
+                    leftTitle.textContent = "GI";
                     rightTitle.textContent = "Key Producer";
                     roundPrompt.textContent = "Match the GI to its Producer";
                     break;
             }
 
-            leftItems.forEach((item, i) => {
-                const button = document.createElement('button');
-                const buttonId = `left-${i}`;
-                button.textContent = item;
-                button.dataset.id = buttonId; // Unique ID for this button
-                button.dataset.value = item;   // The text value
-                button.classList.add('btn-choice', 'w-full', 'text-left', 'p-4', 'rounded-lg', 'font-semibold');
-                button.onclick = () => handleLeftClick(button);
-                leftContainer.appendChild(button);
-                itemAttempts.set(buttonId, 0); // Track attempts per button
-            });
+            // Create 5 parallel rows
+            for(let i = 0; i < 5; i++) {
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-2 gap-4 md:gap-8';
 
-            rightItems.forEach((item, i) => {
-                const button = document.createElement('button');
-                button.textContent = item;
-                button.dataset.id = `right-${i}`; // Unique ID
-                button.dataset.value = item;    // The text value
-                button.classList.add('btn-choice', 'w-full', 'text-left', 'p-4', 'rounded-lg', 'font-semibold');
-                button.onclick = () => handleRightClick(button);
-                rightContainer.appendChild(button);
-            });
+                const leftItem = leftItems[i];
+                const rightItem = rightItems[i];
+
+                // Left Button
+                const leftButton = document.createElement('button');
+                const leftButtonId = `left-${i}`;
+                leftButton.textContent = leftItem.includes("-N/A") ? "N/A" : leftItem;
+                leftButton.dataset.id = leftButtonId; // Unique ID for this button
+                leftButton.dataset.value = leftItem;   // The true value (e.g., "Queensland-N/A")
+                leftButton.classList.add('btn-choice', 'p-4', 'rounded-lg', 'font-semibold');
+                leftButton.onclick = () => handleLeftClick(leftButton);
+                
+                itemAttempts.set(leftButtonId, 0); // Track attempts per button
+
+                // Right Button
+                const rightButton = document.createElement('button');
+                const rightButtonId = `right-${i}`;
+                rightButton.textContent = rightItem;
+                rightButton.dataset.id = rightButtonId; // Unique ID
+                rightButton.dataset.value = rightItem;    // The text value
+                rightButton.classList.add('btn-choice', 'p-4', 'rounded-lg', 'font-semibold');
+                rightButton.onclick = () => handleRightClick(rightButton);
+
+                row.appendChild(leftButton);
+                row.appendChild(rightButton);
+                gameRowsContainer.appendChild(row);
+            }
         }
         
         /**
@@ -999,9 +1039,8 @@
          */
         function handleLeftClick(button) {
             if (button.classList.contains('correct')) return;
-
             // Deselect other left buttons
-            Array.from(leftContainer.children).forEach(btn => btn.classList.remove('selected'));
+            document.querySelectorAll('#game-rows-container .btn-choice[data-id^="left-"]').forEach(btn => btn.classList.remove('selected'));
             
             button.classList.add('selected');
             selectedLeft = button;
@@ -1013,9 +1052,8 @@
          */
         function handleRightClick(button) {
             if (button.classList.contains('correct')) return;
-
             // Deselect other right buttons
-            Array.from(rightContainer.children).forEach(btn => btn.classList.remove('selected'));
+            document.querySelectorAll('#game-rows-container .btn-choice[data-id^="right-"]').forEach(btn => btn.classList.remove('selected'));
 
             button.classList.add('selected');
             selectedRight = button;
@@ -1132,7 +1170,7 @@
             const finalPercentageEl = document.getElementById('final-percentage');
             const finalMessageEl = document.getElementById('final-score-message');
 
-            // Max score is 2 points * 5 pairs * 20 rounds
+            // Max score is 2 points * 5 pairs * 10 rounds
             const maxScore = TOTAL_ROUNDS * 5 * 2;
             const percentage = Math.round(Math.max(0, (score / maxScore) * 100));
 
@@ -1168,21 +1206,30 @@
             gameOverModal.firstElementChild.classList.add('scale-95', 'opacity-0');
             setTimeout(() => {
                 gameOverModal.classList.add('hidden');
-                initGame();
+                // Don't auto-start, go to main menu
+                startModal.classList.remove('hidden');
             }, 200);
         }
 
         // --- EVENT LISTENERS ---
-        startGameBtn.addEventListener('click', () => {
-            startModal.classList.add('hidden');
-            gameContainer.classList.remove('hidden');
-            initGame();
+        startGameBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentGameMode = btn.dataset.mode;
+                startModal.classList.add('hidden');
+                gameContainer.classList.remove('hidden');
+                initGame();
+            });
         });
         
         nextRoundBtn.addEventListener('click', hideSuccessModal);
         playAgainBtn.addEventListener('click', hideGameOver);
 
-        // --- NEW: Database Listeners ---
+        mainMenuBtn.addEventListener('click', () => {
+            gameContainer.classList.add('hidden');
+            startModal.classList.remove('hidden');
+        });
+
+        // --- Database Listeners ---
         exploreDataBtn.addEventListener('click', () => {
             processDatabase(); // (Re)process the data
             buildDatabaseExplorer(); // Build the HTML
