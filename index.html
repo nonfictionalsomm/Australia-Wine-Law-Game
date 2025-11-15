@@ -15,7 +15,7 @@
             color: #4B3F3F; /* Dark brown text */
         }
         h1, h2, h3, h4, h5 {
-            font-family: 'Playfair+Display', serif;
+            font-family: 'Playfair Display', serif; /* FIX: Removed '+' */
         }
         .game-card {
             background-color: #FFFFFF;
@@ -226,7 +226,6 @@
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
-    <!-- Start Game Modal -->
     <div id="start-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center transform transition-all">
             <h2 class="text-4xl font-bold mb-4 text-red-900">Australia Wine Master</h2>
@@ -246,7 +245,6 @@
         </div>
     </div>
 
-    <!-- Flashcard Menu Modal -->
     <div id="flashcard-menu-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center transform transition-all">
             <h2 class="text-4xl font-bold mb-6 text-blue-900">Flashcard Decks</h2>
@@ -265,7 +263,6 @@
     </div>
 
 
-    <!-- Matching Game Container -->
     <div id="game-container" class="w-full max-w-4xl mx-auto hidden relative pt-20">
         <button id="game-main-menu-btn" class="absolute top-4 left-4 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors text-sm z-10">Main Menu</button>
         <div class="text-center mb-6">
@@ -292,12 +289,10 @@
                 <h3 id="right-title" class="text-2xl font-bold text-center">Right Column</h3>
             </div>
             <div id="game-rows-container" class="space-y-3">
-                <!-- Rows injected by JS -->
-            </div>
+                </div>
         </div>
     </div>
 
-    <!-- Flashcard Container -->
     <div id="flashcard-container" class="w-full max-w-2xl mx-auto hidden relative pt-20">
         <button id="flashcard-main-menu-btn" class="absolute top-4 left-4 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors text-sm z-10">Main Menu</button>
         
@@ -306,7 +301,6 @@
             <p id="flashcard-deck-title" class="text-lg text-gray-600 mt-2">Deck Title</p>
         </div>
 
-        <!-- Study Mode Controls -->
         <div class="game-card rounded-lg p-4 md:p-6 mb-6">
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div class="flex items-center space-x-4">
@@ -319,8 +313,7 @@
             </div>
         </div>
 
-        <!-- Flashcard -->
-        <div id="flashcard">
+        <div id="flashcard" class="hidden">
             <div id="flashcard-inner">
                 <div id="flashcard-front">
                     <div class="flashcard-prompt">Prompt</div>
@@ -332,20 +325,17 @@
             </div>
         </div>
 
-        <!-- Card Status -->
         <p id="flashcard-status" class="text-center text-lg font-bold text-gray-700 my-4">Card 1 of 10</p>
         <p id="flashcard-empty-deck-msg" class="text-center text-lg font-bold text-red-700 my-4 hidden">No cards in this study mode.</p>
 
-        <!-- Navigation -->
         <div class="flex justify-between items-center mt-4">
             <button id="prev-card-btn" class="btn-nav">Previous</button>
-            <button id="toggle-learned-btn" class="btn-nav">Mark as Learned</button>
+            <button id="toggle-learned-btn" class="btn-nav bg-green-600 text-white border-green-700 hover:bg-green-700">Mark as Learned</button>
             <button id="next-card-btn" class="btn-nav">Next</button>
         </div>
     </div>
 
 
-    <!-- Success Modal -->
     <div id="success-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center transform transition-all scale-95 opacity-0">
             <div id="modal-message" class="text-4xl font-bold mb-4 text-green-700">Great Job!</div>
@@ -353,7 +343,6 @@
         </div>
     </div>
     
-    <!-- Game Over Modal -->
     <div id="game-over-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center transform transition-all scale-95 opacity-0">
             <h2 class="text-4xl font-bold mb-4 text-red-900">Game Over!</h2>
@@ -366,7 +355,6 @@
         </div>
     </div>
 
-    <!-- Database Explorer Modal -->
     <div id="database-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-3xl w-full h-5/6 transform transition-all flex flex-col">
             <div class="flex justify-between items-center mb-4">
@@ -375,8 +363,7 @@
             </div>
             <p class="text-lg mb-4 text-gray-700">Click any item to expand and see its contents.</p>
             <div id="database-container" class="flex-grow overflow-y-auto space-y-2 pr-2">
-                <!-- Database content will be injected here -->
-            </div>
+                </div>
         </div>
     </div>
 
@@ -834,10 +821,11 @@
         ];
 
         // --- Create specialized data arrays ---
-        const stateZonePairs = gameData.filter(q => q.type === 'State-Zone');
-        const zoneGIPairs = gameData.filter(q => q.type === 'Zone-GI');
-        const giFeaturePairs = gameData.filter(q => q.type === 'GI-Feature' && q.right !== 'N/A' && q.right !== 'none');
-        const giProducerPairs = gameData.filter(q => q.type === 'GI-Producer' && q.right !== 'N/A');
+        // FIX: Changed from 'const' to 'let' and will populate in a dedicated function
+        let stateZonePairs = [];
+        let zoneGIPairs = [];
+        let giFeaturePairs = [];
+        let giProducerPairs = [];
 
         const positiveMessages = ["Great job!", "Good work.", "What a pro!", "Awesome!", "You're on a roll!", "Magnifique!", "Superb!"];
         const TOTAL_ROUNDS = 10;
@@ -984,7 +972,7 @@
             
             states.forEach(state => {
                 const stateData = databaseJSON[state];
-                const stateId = `db-state-${state.replace(/\s/g, '')}`;
+                const stateId = `db-state-${state.replace(/[\s\(\)\/'.]/g, '')}`;
                 
                 const stateDiv = document.createElement('div');
                 stateDiv.innerHTML = `<div class="db-item db-state" data-target="${stateId}">${state}</div>`;
@@ -997,7 +985,7 @@
                 zones.forEach(zone => {
                     const zoneData = stateData.zones[zone];
                     const giCount = Object.keys(zoneData.gis).length;
-                    const zoneId = `db-zone-${state.replace(/\s/g, '')}-${zone.replace(/\s/g, '')}`;
+                    const zoneId = `db-zone-${state.replace(/[\s\(\)\/'.]/g, '')}-${zone.replace(/[\s\(\)\/'.]/g, '')}`;
 
                     if (giCount > 0) {
                         const zoneDiv = document.createElement('div');
@@ -1010,7 +998,7 @@
                         const gisInZone = Object.keys(zoneData.gis).sort();
                         gisInZone.forEach(gi => {
                             const giData = zoneData.gis[gi];
-                            const giId = `db-gi-${state.replace(/\s/g, '')}-${zone.replace(/\s/g, '')}-${gi.replace(/\s/g, '').replace(/[\(\)]/g, '')}`;
+                            const giId = `db-gi-${state.replace(/[\s\(\)\/'.]/g, '')}-${zone.replace(/[\s\(\)\/'.]/g, '')}-${gi.replace(/[\s\(\)\/'.]/g, '')}`;
                             
                             const giDiv = document.createElement('div');
                             giDiv.innerHTML = `<div class="db-item db-gi" data-target="${giId}">${gi}</div>`;
@@ -1124,6 +1112,16 @@
             itemAttempts.clear();
             
             currentRoundPairs = gameRounds[currentRound - 1];
+            
+            // FIX: Check for undefined pairs, which happens if source arrays are empty
+            if (!currentRoundPairs || currentRoundPairs.length === 0 || !currentRoundPairs[0]) {
+                console.error("Error: No round data found. Source arrays might be empty.");
+                // Show an error or gracefully exit
+                showMainMenu();
+                alert("Error: Could not load game data.");
+                return;
+            }
+
             const leftItems = [];
             const rightItems = [];
             const pairType = currentRoundPairs[0].type;
@@ -1355,15 +1353,14 @@
 
         // --- FLASHCARD FUNCTIONS ---
         
+        // FIX: Re-written to use the pre-filtered global arrays
         function buildFlashcardDecks() {
-            // Clear existing decks
-            Object.keys(flashcardDecks).forEach(key => flashcardDecks[key] = []);
-            
+            Object.keys(flashcardDecks).forEach(key => flashcardDecks[key] = []); // Clear
             const uniquePairs = new Map();
 
             // State-Zone Deck: "What State is [ZONE] in?" -> [STATE]
             uniquePairs.set('State-Zone', new Map());
-            gameData.filter(p => p.type === 'State-Zone').forEach(p => {
+            stateZonePairs.forEach(p => {
                 uniquePairs.get('State-Zone').set(p.right, p.left); // key=Zone, value=State
             });
             uniquePairs.get('State-Zone').forEach((state, zone) => {
@@ -1371,14 +1368,14 @@
                     prompt: `What State is this Zone in?`,
                     front: zone,
                     back: state,
-                    id: `sz-${zone}`,
+                    id: `sz-${zone.replace(/[\s\(\)\/'.]/g, '')}`,
                     learned: false
                 });
             });
 
             // Zone-GI Deck: "What Zone is [GI] in?" -> [ZONE]
             uniquePairs.set('Zone-GI', new Map());
-            gameData.filter(p => p.type === 'Zone-GI').forEach(p => {
+            zoneGIPairs.forEach(p => {
                 let zone = p.left.includes("-N/A") ? "N/A" : p.left;
                 uniquePairs.get('Zone-GI').set(p.right, zone); // key=GI, value=Zone
             });
@@ -1387,14 +1384,14 @@
                     prompt: `What Zone is this GI in?`,
                     front: gi,
                     back: zone,
-                    id: `zg-${gi}`,
+                    id: `zg-${gi.replace(/[\s\(\)\/'.]/g, '')}`,
                     learned: false
                 });
             });
 
             // GI-Feature Deck: "What GI has this feature?" -> [GI]
             uniquePairs.set('GI-Feature', new Map());
-            gameData.filter(p => p.type === 'GI-Feature' && p.right !== 'N/A' && p.right !== 'none').forEach(p => {
+            giFeaturePairs.forEach(p => {
                 if (!uniquePairs.get('GI-Feature').has(p.right)) {
                     uniquePairs.get('GI-Feature').set(p.right, new Set());
                 }
@@ -1405,14 +1402,14 @@
                     prompt: `What GI has this feature?`,
                     front: feature,
                     back: Array.from(gis).join(' / '),
-                    id: `gf-${feature.replace(/\s/g, '')}`,
+                    id: `gf-${feature.replace(/[\s\(\)\/'.]/g, '')}`,
                     learned: false
                 });
             });
 
             // GI-Producer Deck: "What GI is [PRODUCER] in?" -> [GI]
             uniquePairs.set('GI-Producer', new Map());
-            gameData.filter(p => p.type === 'GI-Producer' && p.right !== 'N/A').forEach(p => {
+            giProducerPairs.forEach(p => {
                  if (!uniquePairs.get('GI-Producer').has(p.right)) {
                     uniquePairs.get('GI-Producer').set(p.right, new Set());
                 }
@@ -1423,7 +1420,7 @@
                     prompt: `What GI is this producer in?`,
                     front: producer,
                     back: Array.from(gis).join(' / '),
-                    id: `gp-${producer.replace(/\s/g, '')}`,
+                    id: `gp-${producer.replace(/[\s\(\)\/'.]/g, '')}`, // FIX: Sanitize ID
                     learned: false
                 });
             });
@@ -1498,18 +1495,20 @@
             // Update learned button
             if (card.learned) {
                 toggleLearnedBtn.textContent = 'Mark as Unlearned';
-                toggleLearnedBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-                toggleLearnedBtn.classList.add('bg-gray-500', 'hover:bg-gray-600');
+                toggleLearnedBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'border-green-700');
+                toggleLearnedBtn.classList.add('bg-gray-500', 'hover:bg-gray-600', 'border-gray-600');
             } else {
                 toggleLearnedBtn.textContent = 'Mark as Learned';
-                toggleLearnedBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600');
-                toggleLearnedBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                toggleLearnedBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600', 'border-gray-600');
+                toggleLearnedBtn.classList.add('bg-green-600', 'hover:bg-green-700', 'border-green-700');
             }
         }
 
         function flipCard() {
-            isCardFlipped = !isCardFlipped;
-            flashcard.classList.toggle('flipped');
+            if (currentFilteredDeck.length > 0) {
+                isCardFlipped = !isCardFlipped;
+                flashcard.classList.toggle('flipped');
+            }
         }
 
         function nextCard() {
@@ -1526,6 +1525,8 @@
 
         function toggleLearned() {
             const card = currentFilteredDeck[currentCardIndex];
+            if (!card) return; // No card to toggle
+
             // Find this card in the *main* deck and update it
             const mainDeckCard = currentFlashcardDeck.find(c => c.id === card.id);
             mainDeckCard.learned = !mainDeckCard.learned;
@@ -1533,25 +1534,29 @@
             // Update the button text immediately
             if (mainDeckCard.learned) {
                 toggleLearnedBtn.textContent = 'Mark as Unlearned';
-                toggleLearnedBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-                toggleLearnedBtn.classList.add('bg-gray-500', 'hover:bg-gray-600');
+                toggleLearnedBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'border-green-700');
+                toggleLearnedBtn.classList.add('bg-gray-500', 'hover:bg-gray-600', 'border-gray-600');
             } else {
                 toggleLearnedBtn.textContent = 'Mark as Learned';
-                toggleLearnedBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600');
-                toggleLearnedBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                toggleLearnedBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600', 'border-gray-600');
+                toggleLearnedBtn.classList.add('bg-green-600', 'hover:bg-green-700', 'border-green-700');
             }
 
             // Re-filter the deck *after* a short delay so the user doesn't
             // see an abrupt change if the card disappears from the filtered deck
             setTimeout(() => {
+                const oldIndex = currentCardIndex;
                 buildFilteredDeck();
+                // Try to stay on the "same" card
+                if (currentFilteredDeck.length > 0) {
+                    showCard(Math.min(oldIndex, currentFilteredDeck.length - 1));
+                }
             }, 200);
         }
 
         function resetDeck() {
             currentFlashcardDeck.forEach(card => card.learned = false);
             buildFilteredDeck();
-            showCard(0);
         }
 
         function showMainMenu() {
@@ -1615,7 +1620,20 @@
 
 
         // --- Initial App Setup ---
-        buildFlashcardDecks();
+        // FIX: Centralize all data initialization
+        function initializeData() {
+            // 1. Populate filtered arrays for the matching game
+            stateZonePairs = gameData.filter(q => q.type === 'State-Zone');
+            zoneGIPairs = gameData.filter(q => q.type === 'Zone-GI');
+            giFeaturePairs = gameData.filter(q => q.type === 'GI-Feature' && q.right !== 'N/A' && q.right !== 'none');
+            giProducerPairs = gameData.filter(q => q.type === 'GI-Producer' && q.right !== 'N/A');
+            
+            // 2. Build the flashcard decks from these new arrays
+            buildFlashcardDecks();
+        }
+
+        // Run the initialization function once the script loads
+        initializeData();
 
     </script>
 </body>
