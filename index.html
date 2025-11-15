@@ -15,7 +15,7 @@
             color: #4B3F3F; /* Dark brown text */
         }
         h1, h2, h3, h4, h5 {
-            font-family: 'Playfair Display', serif; /* FIX: Removed '+' */
+            font-family: 'Playfair Display', serif;
         }
         .game-card {
             background-color: #FFFFFF;
@@ -966,6 +966,7 @@
                 }
             });
 
+            // Clean up empty sets
             for (const state in databaseJSON) {
                 for (const zone in databaseJSON[state].zones) {
                     for (const gi in databaseJSON[state].zones[zone].gis) {
@@ -1585,6 +1586,7 @@
             // 1. Populate filtered arrays for the matching game
             stateZonePairs = gameData.filter(q => q.type === 'State-Zone');
             zoneGIPairs = gameData.filter(q => q.type === 'Zone-GI');
+            // --- FIX IS HERE ---
             giFeaturePairs = gameData.filter(q => q.type === 'GI-Feature' && q.right !== 'N/A' && q.right !== 'none');
             giProducerPairs = gameData.filter(q => q.type === 'GI-Producer' && q.right !== 'N/A');
             
@@ -1615,6 +1617,14 @@
 
             // 3. Build the flashcard decks
             buildFlashcardDecks();
+        }
+        
+        // Helper
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
         }
 
         // Run the initialization function once the script loads
