@@ -1095,8 +1095,10 @@
 
             if (currentGameMode === 'State-Zone') {
                 sourcePairs = [...stateZonePairs];
+                // No smart builder needed, Zone to State is 1:1
             } else if (currentGameMode === 'Zone-GI') {
                 sourcePairs = [...zoneGIPairs];
+                useSmartBuilder = true; // <-- THE FIX IS HERE
             } else if (currentGameMode === 'GI-Natural-Feature') {
                 sourcePairs = [...giFeaturePairs];
                 useSmartBuilder = true;
@@ -1796,3 +1798,4 @@
     </script>
 </body>
 </html>
+
